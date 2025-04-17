@@ -24,7 +24,10 @@ function initializeDatabase() {
       is_active BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_used DATETIME,
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      revoked_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      CHECK (is_active IN (0, 1)),
+      CHECK ((revoked_at IS NULL) OR (revoked_at >= created_at))
     )`);
 
     // API Usage tracking table
@@ -35,10 +38,17 @@ function initializeDatabase() {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (api_key_id) REFERENCES api_keys (id)
     )`);
+
+    // Create indexes for better query performance
+    db.run('CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_api_usage_api_key_id ON api_usage(api_key_id)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_api_usage_timestamp ON api_usage(timestamp)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage(endpoint)');
   });
 }
 
 module.exports = {
   db,
   initializeDatabase
-}; 
+};
