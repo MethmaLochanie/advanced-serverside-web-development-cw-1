@@ -19,48 +19,27 @@ import { useAuth } from '../context/AuthContext';
 
 const Countries = () => {
   const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [region, setRegion] = useState('all');
+  const [hasSearched, setHasSearched] = useState(false);
   const { user } = useAuth();
 
   const regions = ['all', 'africa', 'americas', 'asia', 'europe', 'oceania'];
 
-  useEffect(() => {
-    fetchCountries();
-  }, [region]);
-
-  const fetchCountries = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const endpoint = region === 'all' ? '' : `/region/${region}`;
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/countries${endpoint}`,
-        {
-          headers: {
-            'x-api-key': user.apiKeys[0]
-          }
-        }
-      );
-      setCountries(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error fetching countries');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      fetchCountries();
+      setCountries([]);
+      setError('');
+      setHasSearched(false);
       return;
     }
 
     try {
       setLoading(true);
       setError('');
+      setHasSearched(true);
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/countries/name/${searchTerm}`,
         {
@@ -73,17 +52,14 @@ const Countries = () => {
     } catch (err) {
       if (err.response?.status === 404) {
         setCountries([]);
+        setError('Wrong country name');
       } else {
-        setError(err.response?.data?.message || 'Error searching countries');
+        setError('Error fetching');
       }
     } finally {
       setLoading(false);
     }
   };
-
-  const filteredCountries = countries.filter(country =>
-    country.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <Box>
@@ -95,7 +71,7 @@ const Countries = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Search countries"
+              label="Search Country name"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -140,7 +116,7 @@ const Countries = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {filteredCountries.map((country) => (
+          {countries.map((country) => (
             <Grid item xs={12} sm={6} md={4} key={country.name}>
               <Card>
                 <CardMedia
@@ -173,9 +149,9 @@ const Countries = () => {
         </Grid>
       )}
 
-      {!loading && filteredCountries.length === 0 && (
+      {!loading && hasSearched && countries.length === 0 && !error && (
         <Typography variant="body1" sx={{ textAlign: 'center', mt: 4 }}>
-          No countries found
+          Wrong country name
         </Typography>
       )}
     </Box>
