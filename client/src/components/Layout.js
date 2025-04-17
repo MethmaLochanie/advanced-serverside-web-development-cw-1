@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -13,14 +13,16 @@ import {
   Typography,
   Button,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Divider
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard,
   Public,
   VpnKey,
-  Logout
+  Logout,
+  AdminPanelSettings
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,6 +47,7 @@ const Layout = ({ children }) => {
   };
 
   const handleNavigation = (path) => {
+    console.log('Layout - Navigating to:', path);
     navigate(path);
     if (isMobile) {
       setMobileOpen(false);
@@ -75,9 +78,27 @@ const Layout = ({ children }) => {
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
+        
+        {user?.role === 'admin' && (
+          <>
+            <Divider />
+            <ListItem
+              button
+              onClick={() => handleNavigation('/admin')}
+              selected={location.pathname === '/admin'}
+            >
+              <ListItemIcon><AdminPanelSettings /></ListItemIcon>
+              <ListItemText primary="Admin Dashboard" />
+            </ListItem>
+          </>
+        )}
       </List>
     </Box>
   );
+
+  const currentTitle = location.pathname === '/admin' 
+    ? 'Admin Dashboard'
+    : menuItems.find(item => item.path === location.pathname)?.text || 'Dashboard';
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -98,10 +119,10 @@ const Layout = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find(item => item.path === location.pathname)?.text || 'Dashboard'}
+            {currentTitle}
           </Typography>
           <Typography variant="body1" sx={{ mr: 2 }}>
-            {user?.username}
+            {user?.username} ({user?.role || 'user'})
           </Typography>
           <Button color="inherit" onClick={handleLogout} startIcon={<Logout />}>
             Logout
