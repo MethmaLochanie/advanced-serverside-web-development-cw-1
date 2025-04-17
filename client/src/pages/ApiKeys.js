@@ -29,7 +29,7 @@ const ApiKeys = () => {
   const [apiKeys, setApiKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedKey, setSelectedKey] = useState(null);
+  // const [selectedKey, setSelectedKey] = useState(null);
   const [showUsageDialog, setShowUsageDialog] = useState(false);
   const [usageData, setUsageData] = useState([]);
   const [usageLoading, setUsageLoading] = useState(false);
@@ -45,9 +45,7 @@ const ApiKeys = () => {
       setLoading(true);
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/keys`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setApiKeys(response.data);
     } catch (err) {
@@ -59,14 +57,14 @@ const ApiKeys = () => {
 
   const generateApiKey = async () => {
     try {
-      const response = await axios.post(
+      // generate on server
+      await axios.post(
         `${process.env.REACT_APP_API_URL}/keys/generate`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setApiKeys([...apiKeys, response.data]);
+      // refresh list
+      await fetchApiKeys();
       setSnackbar({ open: true, message: 'New API key generated successfully' });
     } catch (err) {
       setError(err.response?.data?.message || 'Error generating API key');
@@ -77,9 +75,7 @@ const ApiKeys = () => {
     try {
       await axios.delete(
         `${process.env.REACT_APP_API_URL}/keys/${keyId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       await fetchApiKeys();
       setSnackbar({ open: true, message: 'API key revoked successfully' });
@@ -93,9 +89,7 @@ const ApiKeys = () => {
       setUsageLoading(true);
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/keys/${keyId}/usage`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setUsageData(response.data);
     } catch (err) {
@@ -106,7 +100,7 @@ const ApiKeys = () => {
   };
 
   const handleViewUsage = (key) => {
-    setSelectedKey(key);
+    // setSelectedKey(key);
     setShowUsageDialog(true);
     fetchKeyUsage(key.id);
   };
@@ -118,6 +112,7 @@ const ApiKeys = () => {
 
   return (
     <Box>
+      {/* Header + Generate button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
         <Typography variant="h4">API Keys</Typography>
         <Button
@@ -129,12 +124,14 @@ const ApiKeys = () => {
         </Button>
       </Box>
 
+      {/* Error alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
+      {/* Loading spinner */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
@@ -145,7 +142,13 @@ const ApiKeys = () => {
             <Grid item xs={12} key={key.id}>
               <Card>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
                     <Box>
                       <Typography variant="h6" gutterBottom>
                         API Key
@@ -186,7 +189,11 @@ const ApiKeys = () => {
                         <IconButton
                           color="error"
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                            if (
+                              window.confirm(
+                                'Are you sure you want to revoke this API key? This action cannot be undone.'
+                              )
+                            ) {
                               revokeApiKey(key.id);
                             }
                           }}
@@ -203,6 +210,7 @@ const ApiKeys = () => {
         </Grid>
       )}
 
+      {/* Usage dialog */}
       <Dialog
         open={showUsageDialog}
         onClose={() => setShowUsageDialog(false)}
@@ -217,20 +225,21 @@ const ApiKeys = () => {
             </Box>
           ) : (
             <Box sx={{ mt: 2 }}>
-              {usageData.map((usage, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1">
-                    Endpoint: {usage.endpoint}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Count: {usage.count}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Last used: {new Date(usage.last_used).toLocaleString()}
-                  </Typography>
-                </Box>
-              ))}
-              {usageData.length === 0 && (
+              {usageData.length > 0 ? (
+                usageData.map((usage, i) => (
+                  <Box key={i} sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1">
+                      Endpoint: {usage.endpoint}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Count: {usage.count}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Last used: {new Date(usage.last_used).toLocaleString()}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
                 <Typography>No usage data available</Typography>
               )}
             </Box>
@@ -241,6 +250,7 @@ const ApiKeys = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Snackbar for copy/generate/revoke */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
@@ -251,4 +261,4 @@ const ApiKeys = () => {
   );
 };
 
-export default ApiKeys; 
+export default ApiKeys;
