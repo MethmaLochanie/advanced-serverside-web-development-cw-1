@@ -1,4 +1,3 @@
-// src/components/ApiKeys.jsx
 import React, { useState } from 'react';
 import {
   Box, Button, Card, CardContent, Typography, IconButton,
@@ -72,18 +71,28 @@ const ApiKeys = () => {
                   <Typography variant="caption">
                     Created: {new Date(key.created_at).toLocaleString()}
                   </Typography>
+                  {key.last_used && (
+                    <Typography variant="body2" color="text.secondary">
+                      Last used: {new Date(key.last_used).toLocaleString()}
+                    </Typography>
+                  )}
+                  {key.revoked_at && (
+                    <Typography variant="body2" color="error">
+                      Revoked: {new Date(key.revoked_at).toLocaleString()}
+                    </Typography>
+                  )}
                 </Box>
                 <Box>
-                  <Tooltip title="Copy">
+                  <Tooltip title="Copy API Key">
                     <IconButton onClick={() => copyKey(key.api_key)}><CopyIcon/></IconButton>
                   </Tooltip>
-                  <Tooltip title="Usage">
+                  <Tooltip title="View Usage">
                     <IconButton onClick={() => handleViewUsage(key.id)}><ViewIcon/></IconButton>
                   </Tooltip>
-                  <Tooltip title="Revoke">
+                  <Tooltip title="Revoke Key">
                     <IconButton
                       color="error"
-                      onClick={() => window.confirm('Revoke?') && handleRevoke(key.id)}
+                      onClick={() => window.confirm('Are you sure you want to revoke this API key? This action cannot be undone.') && handleRevoke(key.id)}
                       disabled={revoke.isLoading}
                     >
                       <DeleteIcon/>
@@ -99,26 +108,38 @@ const ApiKeys = () => {
       <Dialog
         open={usageDialog.open}
         onClose={() => setUsageDialog(d => ({ ...d, open: false }))}
-        fullWidth maxWidth="md"
+        maxWidth="md"
+        fullWidth
       >
-        <DialogTitle>Usage</DialogTitle>
+        <DialogTitle>API Key Usage</DialogTitle>
         <DialogContent>
-          {usageDialog.loading
-            ? <CircularProgress />
-            : usageDialog.usage.map((u,i) => (
-                <Box key={i} sx={{ mb: 2 }}>
-                  <Typography>Endpoint: {u.endpoint}</Typography>
-                  <Typography variant="caption">
-                    Count: {u.count} • Last: {new Date(u.last_used).toLocaleString()}
+          {usageDialog.loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              {usageDialog.usage.map((usage, index) => (
+                <Box key={index} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1">
+                    Endpoint: {usage.endpoint}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Count: {usage.count}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Last used: {new Date(usage.last_used).toLocaleString()}
                   </Typography>
                 </Box>
-              ))
-          }
+              ))}
+              {usage.data === 0 && (
+                <Typography>No usage data available</Typography>
+              )}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUsageDialog(d => ({ ...d, open: false }))}>
-            Close
-          </Button>
+          <Button onClick={() => setUsageDialog(d => ({ ...d, open: false }))}>Close</Button>
         </DialogActions>
       </Dialog>
 

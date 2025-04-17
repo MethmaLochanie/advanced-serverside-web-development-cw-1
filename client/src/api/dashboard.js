@@ -1,14 +1,7 @@
-// src/api/dashboard.js
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-/**
- * Fetches API keys, usage stats, and computes:
- *  - activeKeys
- *  - totalRequests
- *  - popularEndpoints (top 5)
- */
 export async function getDashboardStats(token) {
   // 1) Fetch the list of API keys
   const { data: keys } = await axios.get(

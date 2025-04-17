@@ -1,4 +1,3 @@
-// src/hooks/useCountries.js
 import { useMutation } from '@tanstack/react-query';
 import { fetchCountriesByName } from '../api/countries';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +13,6 @@ export function useSearchCountries() {
       }
       return fetchCountriesByName(apiKey, searchTerm);
     },
-    // you can handle global onError or onSuccess here if you like
     retry: false
   });
 }

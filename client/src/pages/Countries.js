@@ -23,7 +23,6 @@ const Countries = () => {
   const [region, setRegion] = useState('all');
   const [hasSearched, setHasSearched] = useState(false);
 
-  // destructure your mutation hook
   const {
     mutate: search,
     data: countries = [],
@@ -57,7 +56,6 @@ const Countries = () => {
 
   return (
     <Box>
-      {/* Search bar + region selector */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Countries
@@ -98,8 +96,6 @@ const Countries = () => {
           </Grid>
         </Grid>
       </Box>
-
-      {/* Error */}
       {isError && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error.response?.status === 404
@@ -107,15 +103,12 @@ const Countries = () => {
             : 'Error fetching countries'}
         </Alert>
       )}
-
-      {/* Loading Spinner */}
       {localLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
         </Box>
       ) : (
         <>
-          {/* Results */}
           {displayed.length > 0 ? (
             <Grid container spacing={3}>
               {displayed.map((country) => (
@@ -150,7 +143,6 @@ const Countries = () => {
               ))}
             </Grid>
           ) : (
-            // only show “no results” if the user has searched
             hasSearched && !isError && (
               <Typography
                 variant="body1"
