@@ -21,9 +21,9 @@ const listApiKeys = (req, res) => {
   const userId = req.user.id;
 
   db.all(
-    `SELECT id, api_key, is_active, created_at, last_used,
+    `SELECT id, api_key, is_active, created_at, last_used, revoked_at,
      (SELECT COUNT(*) FROM api_usage WHERE api_key_id = api_keys.id) as usage_count
-     FROM api_keys WHERE user_id = ?`,
+     FROM api_keys WHERE user_id = ? AND is_active = 1`,
     [userId],
     (err, keys) => {
       if (err) {
@@ -38,17 +38,29 @@ const revokeApiKey = (req, res) => {
   const userId = req.user.id;
   const keyId = req.params.id;
 
-  db.run(
-    'UPDATE api_keys SET is_active = 0 WHERE id = ? AND user_id = ?',
+  // First verify the key belongs to the user
+  db.get(
+    'SELECT id FROM api_keys WHERE id = ? AND user_id = ?',
     [keyId, userId],
-    function(err) {
+    (err, key) => {
       if (err) {
-        return res.status(500).json({ message: 'Error revoking API key' });
+        return res.status(500).json({ message: 'Database error' });
       }
-      if (this.changes === 0) {
+      if (!key) {
         return res.status(404).json({ message: 'API key not found or unauthorized' });
       }
-      res.json({ message: 'API key revoked successfully' });
+
+      // Revoke the key by setting is_active to 0 and adding revocation timestamp
+      db.run(
+        'UPDATE api_keys SET is_active = 0, revoked_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [keyId],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ message: 'Error revoking API key' });
+          }
+          res.json({ message: 'API key revoked successfully' });
+        }
+      );
     }
   );
 };
