@@ -78,10 +78,13 @@ const login = (req, res) => {
 
       // Generate JWT token
       const token = jwt.sign(
-        { id: user.id, username: user.username },
+        { id: user.id, username: user.username, role: user.role },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
+
+      // Update last login
+      db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
       // Get user's API keys
       db.all(
@@ -92,15 +95,17 @@ const login = (req, res) => {
             return res.status(500).json({ message: 'Error retrieving API keys' });
           }
 
-          res.json({
+          const userData = {
             token,
             user: {
               id: user.id,
               username: user.username,
               email: user.email,
+              role: user.role,
               apiKeys: apiKeys.map(k => k.api_key)
             }
-          });
+          };
+          res.json(userData);
         }
       );
     });
@@ -112,32 +117,50 @@ const validateToken = (req, res) => {
   const userId = req.user.id;
 
   // Get fresh user data
-  db.get('SELECT id, username, email FROM users WHERE id = ?', [userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: 'Database error' });
-    }
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Get user's API keys
-    db.all(
-      'SELECT api_key FROM api_keys WHERE user_id = ? AND is_active = 1',
-      [userId],
-      (err, apiKeys) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error retrieving API keys' });
-        }
-
-        res.json({
-          user: {
-            ...user,
-            apiKeys: apiKeys.map(k => k.api_key)
-          }
-        });
+  db.get(
+    'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
+    [userId],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ message: 'Database error' });
       }
-    );
-  });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      if (!user.is_active) {
+        return res.status(401).json({ message: 'Account is inactive' });
+      }
+
+      // Get user's API keys
+      db.all(
+        'SELECT id, api_key, is_active, created_at, last_used FROM api_keys WHERE user_id = ? AND is_active = 1',
+        [userId],
+        (err, apiKeys) => {
+          if (err) {
+            return res.status(500).json({ message: 'Error retrieving API keys' });
+          }
+
+          // Generate a fresh token
+          const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+          );
+
+          res.json({
+            token,
+            user: {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+              apiKeys: apiKeys.map(k => k.api_key)
+            }
+          });
+        }
+      );
+    }
+  );
 };
 
 module.exports = {

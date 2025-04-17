@@ -1,21 +1,41 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
-
-// Components
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Countries from './pages/Countries';
 import ApiKeys from './pages/ApiKeys';
+import AdminDashboard from './components/admin/AdminDashboard';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({ children, requireAdmin }) => {
+  const { user, isAuthenticated } = useAuth();
+ 
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  if (requireAdmin && user?.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
+
+// Admin Route component
+const AdminRoute = () => {
+  console.log('AdminRoute rendering');
+  return (
+    <ProtectedRoute requireAdmin>
+      <Layout>
+        <AdminDashboard />
+      </Layout>
+    </ProtectedRoute>
+  );
 };
 
 function App() {
@@ -23,17 +43,24 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <BrowserRouter>
+        <Router>
           <Routes>
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={
+            
+            {/* Protected routes */}
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
                 </Layout>
               </ProtectedRoute>
             } />
+            
+            {/* Admin route */}
+            <Route path="/admin" element={<AdminRoute />} />
+            
             <Route path="/countries" element={
               <ProtectedRoute>
                 <Layout>
@@ -48,8 +75,11 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
+            
+            {/* Default route */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -2,10 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const countryRoutes = require('./routes/countries');
 const apiKeyRoutes = require('./routes/apiKeys');
+const adminRoutes = require('./routes/admin');
 const { initializeDatabase } = require('./database/init');
 
 const app = express();
@@ -16,17 +16,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: process.env.RATE_LIMIT_WINDOW_MS || 900000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100
-});
-app.use('/api/', limiter);
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/countries', countryRoutes);
 app.use('/api/keys', apiKeyRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Initialize database
 initializeDatabase();
