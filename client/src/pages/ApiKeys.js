@@ -81,7 +81,7 @@ const ApiKeys = () => {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-      setApiKeys(apiKeys.filter(key => key.id !== keyId));
+      await fetchApiKeys();
       setSnackbar({ open: true, message: 'API key revoked successfully' });
     } catch (err) {
       setError(err.response?.data?.message || 'Error revoking API key');
@@ -165,6 +165,11 @@ const ApiKeys = () => {
                           Last used: {new Date(key.last_used).toLocaleString()}
                         </Typography>
                       )}
+                      {key.revoked_at && (
+                        <Typography variant="body2" color="error">
+                          Revoked: {new Date(key.revoked_at).toLocaleString()}
+                        </Typography>
+                      )}
                     </Box>
                     <Box>
                       <Tooltip title="Copy API Key">
@@ -180,7 +185,11 @@ const ApiKeys = () => {
                       <Tooltip title="Revoke Key">
                         <IconButton
                           color="error"
-                          onClick={() => revokeApiKey(key.id)}
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                              revokeApiKey(key.id);
+                            }
+                          }}
                         >
                           <DeleteIcon />
                         </IconButton>
