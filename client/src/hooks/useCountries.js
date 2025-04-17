@@ -1,18 +1,20 @@
 // src/hooks/useCountries.js
-import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { fetchCountriesByName } from '../api/countries';
 import { useAuth } from '../context/AuthContext';
 
-export function useSearchCountries(searchTerm) {
+export function useSearchCountries() {
   const { user } = useAuth();
-  const apiKey = user.apiKeys[0];
+  const apiKey = user.apiKeys[0]
 
-  return useQuery(
-    ['countries', searchTerm],
-    () => fetchCountriesByName(apiKey, searchTerm),
-    {
-      enabled: !!searchTerm,      // only fetch when there's a non-empty search term
-      retry: false,               // don’t retry 404’s
-    }
-  );
+  return useMutation({
+    mutationFn: (searchTerm) => {
+      if (!apiKey) {
+        throw new Error('Missing API key');
+      }
+      return fetchCountriesByName(apiKey, searchTerm);
+    },
+    // you can handle global onError or onSuccess here if you like
+    retry: false
+  });
 }

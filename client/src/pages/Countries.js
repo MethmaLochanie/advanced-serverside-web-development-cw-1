@@ -23,30 +23,41 @@ const Countries = () => {
   const [region, setRegion] = useState('all');
   const [hasSearched, setHasSearched] = useState(false);
 
+  // destructure your mutation hook
   const {
+    mutate: search,
     data: countries = [],
-    isLoading,
     isError,
-    error,
-    refetch
-  } = useSearchCountries(searchTerm);
+    error
+  } = useSearchCountries();
+
+  // local loading state
+  const [localLoading, setLocalLoading] = useState(false);
 
   const handleSearch = () => {
-    if (!searchTerm.trim()) {
+    const term = searchTerm.trim();
+    if (!term) {
       setHasSearched(false);
       return;
     }
     setHasSearched(true);
-    refetch();
+    setLocalLoading(true);
+
+    // call the mutation, and clear localLoading when done
+    search(term, {
+      onSettled: () => setLocalLoading(false)
+    });
   };
 
-  // client‑side region filter (requires your API to include a `region` field)
-  const displayed = region === 'all'
-    ? countries
-    : countries.filter(c => c.region?.toLowerCase() === region);
+  // apply region filter
+  const displayed =
+    region === 'all'
+      ? countries
+      : countries.filter((c) => c.region?.toLowerCase() === region);
 
   return (
     <Box>
+      {/* Search bar + region selector */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Countries
@@ -57,8 +68,8 @@ const Countries = () => {
               fullWidth
               label="Search Country name"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handleSearch()}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -76,9 +87,9 @@ const Countries = () => {
               fullWidth
               label="Region"
               value={region}
-              onChange={e => setRegion(e.target.value)}
+              onChange={(e) => setRegion(e.target.value)}
             >
-              {regions.map(r => (
+              {regions.map((r) => (
                 <MenuItem key={r} value={r}>
                   {r.charAt(0).toUpperCase() + r.slice(1)}
                 </MenuItem>
@@ -88,6 +99,7 @@ const Countries = () => {
         </Grid>
       </Box>
 
+      {/* Error */}
       {isError && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error.response?.status === 404
@@ -96,15 +108,17 @@ const Countries = () => {
         </Alert>
       )}
 
-      {isLoading ? (
+      {/* Loading Spinner */}
+      {localLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
         </Box>
       ) : (
         <>
+          {/* Results */}
           {displayed.length > 0 ? (
             <Grid container spacing={3}>
-              {displayed.map(country => (
+              {displayed.map((country) => (
                 <Grid item xs={12} sm={6} md={4} key={country.name}>
                   <Card>
                     <CardMedia
@@ -127,7 +141,7 @@ const Countries = () => {
                       <Typography variant="body2" color="text.secondary">
                         Currencies:{' '}
                         {country.currencies
-                          .map(c => `${c.name} (${c.symbol})`)
+                          .map((c) => `${c.name} (${c.symbol})`)
                           .join(', ')}
                       </Typography>
                     </CardContent>
@@ -135,11 +149,17 @@ const Countries = () => {
                 </Grid>
               ))}
             </Grid>
-          ) : hasSearched && !isError ? (
-            <Typography variant="body1" sx={{ textAlign: 'center', mt: 4 }}>
-              No countries found
-            </Typography>
-          ) : null}
+          ) : (
+            // only show “no results” if the user has searched
+            hasSearched && !isError && (
+              <Typography
+                variant="body1"
+                sx={{ textAlign: 'center', mt: 4 }}
+              >
+                No countries found
+              </Typography>
+            )
+          )}
         </>
       )}
     </Box>
