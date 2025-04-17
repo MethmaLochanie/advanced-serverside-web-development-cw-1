@@ -9,15 +9,16 @@ A secure API middleware service that interfaces with RestCountries.com, providin
 ├── client/                 # React frontend
 │   ├── public/            # Static files
 │   └── src/
+|       ├── api/          #endpoints
 │       ├── components/    # Reusable components
+|           ├── admin/      #user management
 │       ├── pages/        # Page components
 │       ├── services/     # API services
-│       ├── utils/        # Utility functions
+│       ├── hooks/        # hooks ro call API end points
 │       └── context/      # React context
 ├── server/                # Node.js backend
 │   └── src/
 │       ├── controllers/  # Route controllers
-│       ├── models/       # Database models
 │       ├── routes/       # API routes
 │       ├── middleware/   # Custom middleware
 │       ├── config/       # Configuration files
