@@ -84,5 +84,3 @@ A secure API middleware service that interfaces with RestCountries.com, providin
 - Request rate limiting
 - Input validation
 - XSS protection with helmet 
-
-## Containerized docker implementation
