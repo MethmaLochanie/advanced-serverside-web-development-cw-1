@@ -11,24 +11,27 @@ export function useApiKeys() {
 }
 
 export function useGenerateApiKey(onSuccessSnackbar) {
-  const { token } = useAuth();
+  const { token, validateToken } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.createApiKey(token),
     onSuccess: (newKey) => {
       qc.invalidateQueries({ queryKey: ['apiKeys'] });
+      validateToken();
       onSuccessSnackbar('New API key generated successfully');
     },
   });
 }
 
+
 export function useRevokeApiKey(onSuccessSnackbar) {
-  const { token } = useAuth();
+  const { token, validateToken } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (keyId) => api.deleteApiKey({ token, keyId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['apiKeys'] });
+      validateToken();
       onSuccessSnackbar('API key revoked successfully');
     },
   });

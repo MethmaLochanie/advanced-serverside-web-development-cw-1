@@ -2,7 +2,7 @@ import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL;
 
 export async function fetchCountriesByName(apiKey, name) {
-  // optional guard to get a JS error early if key is missing
+  // guard to get a JS error early if key is missing
   if (!apiKey) {
     throw new Error('Missing API key');
   }
