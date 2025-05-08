@@ -72,7 +72,14 @@ const initializeDatabase = async () => {
         role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
         is_active BOOLEAN DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP
+        last_login TIMESTAMP,
+        last_password_change TIMESTAMP,
+        failed_login_attempts INTEGER DEFAULT 0,
+        account_locked_until TIMESTAMP,
+        email_verified BOOLEAN DEFAULT 0,
+        verification_token TEXT,
+        reset_password_token TEXT,
+        reset_password_expires TIMESTAMP
       )
     `);
     console.log('Users table ready');

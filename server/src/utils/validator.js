@@ -11,7 +11,8 @@ const validateRegistration = [
   body('email')
     .trim()
     .isEmail()
-    .withMessage('Please provide a valid email address'),
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
   
   body('password')
     .isLength({ min: 8 })
@@ -22,6 +23,16 @@ const validateRegistration = [
     .withMessage('Password must contain at least one lowercase letter')
     .matches(/[0-9]/)
     .withMessage('Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/)
+    .withMessage('Password must contain at least one special character')
+    .custom((value) => {
+      // Check for common passwords
+      const commonPasswords = ['password123', 'admin123', 'qwerty123'];
+      if (commonPasswords.includes(value.toLowerCase())) {
+        throw new Error('This password is too common. Please choose a stronger password.');
+      }
+      return true;
+    })
 ];
 
 const validateLogin = [
