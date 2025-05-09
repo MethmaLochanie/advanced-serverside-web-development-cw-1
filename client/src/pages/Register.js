@@ -8,8 +8,12 @@ import {
   Typography,
   Link,
   Alert,
-  Paper
+  Paper,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
@@ -19,10 +23,12 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState([]);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,12 +37,15 @@ const Register = () => {
     });
   };
 
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword((show) => !show);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError([]);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(['Passwords do not match']);
       return;
     }
 
@@ -46,7 +55,15 @@ const Register = () => {
     if (result.success) {
       navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
     } else {
-      setError(result.error);
+      if (Array.isArray(result.error)) {
+        setError([result.error[0].message || result.error[0]]);
+      } else if (typeof result.error === 'string') {
+        setError([result.error]);
+      } else if (result.error && result.error.message) {
+        setError([result.error.message]);
+      } else {
+        setError(['An unknown error occurred.']);
+      }
     }
     setLoading(false);
   };
@@ -74,11 +91,11 @@ const Register = () => {
           <Typography component="h1" variant="h5">
             Sign up
           </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-              {error}
+          {error.length > 0 && error.map((err, idx) => (
+            <Alert key={idx} severity="error" sx={{ mt: 2, width: '100%' }}>
+              {err}
             </Alert>
-          )}
+          ))}
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
@@ -109,11 +126,24 @@ const Register = () => {
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               margin="normal"
@@ -121,10 +151,23 @@ const Register = () => {
               fullWidth
               name="confirmPassword"
               label="Confirm Password"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle confirm password visibility"
+                      onClick={handleClickShowConfirmPassword}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
               type="submit"

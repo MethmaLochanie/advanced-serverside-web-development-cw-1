@@ -42,9 +42,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', newToken);
       return { success: true };
     } catch (error) {
+      const errData = error.response?.data;
+      if (errData?.errors) {
+        return { success: false, error: errData.errors };
+      }
       return {
         success: false,
-        error: error.response?.data?.message || 'Login failed'
+        error: errData?.message || 'Login failed'
       };
     }
   };
@@ -58,9 +62,13 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: true, data: response.data };
     } catch (error) {
+      const errData = error.response?.data;
+      if (errData?.errors) {
+        return { success: false, error: errData.errors };
+      }
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed'
+        error: errData?.message || 'Registration failed'
       };
     }
   };
