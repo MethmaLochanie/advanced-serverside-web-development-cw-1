@@ -32,7 +32,8 @@ const validateRegistration = [
         throw new Error('This password is too common. Please choose a stronger password.');
       }
       return true;
-    })
+    }),
+  validateRequest
 ];
 
 const validateLogin = [
@@ -57,9 +58,13 @@ const validateApiKey = [
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    // Return all validation errors with field and message
     return res.status(400).json({
       message: 'Validation Error',
-      errors: errors.array()
+      errors: errors.array().map(err => ({
+        field: err.path,
+        message: err.msg
+      }))
     });
   }
   next();
