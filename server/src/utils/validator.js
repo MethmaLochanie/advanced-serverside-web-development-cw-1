@@ -1,5 +1,19 @@
 const { body, validationResult } = require('express-validator');
 
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      message: 'Validation Error',
+      errors: errors.array().map(err => ({
+        field: err.path,
+        message: err.msg
+      }))
+    });
+  }
+  next();
+};
+
 const validateRegistration = [
   body('username')
     .trim()
@@ -32,7 +46,8 @@ const validateRegistration = [
         throw new Error('This password is too common. Please choose a stronger password.');
       }
       return true;
-    })
+    }),
+  validateRequest
 ];
 
 const validateLogin = [
@@ -53,17 +68,6 @@ const validateApiKey = [
     .isLength({ min: 3, max: 50 })
     .withMessage('API key name must be between 3 and 50 characters')
 ];
-
-const validateRequest = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      message: 'Validation Error',
-      errors: errors.array()
-    });
-  }
-  next();
-};
 
 module.exports = {
   validateRegistration,

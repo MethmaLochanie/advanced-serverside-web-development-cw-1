@@ -70,16 +70,8 @@ const initializeDatabase = async () => {
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
-        is_active BOOLEAN DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP,
-        last_password_change TIMESTAMP,
-        failed_login_attempts INTEGER DEFAULT 0,
-        account_locked_until TIMESTAMP,
-        email_verified BOOLEAN DEFAULT 0,
-        verification_token TEXT,
-        reset_password_token TEXT,
-        reset_password_expires TIMESTAMP
+        last_login TIMESTAMP
       )
     `);
     console.log('Users table ready');
@@ -93,21 +85,10 @@ const initializeDatabase = async () => {
         is_active BOOLEAN DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_used TIMESTAMP,
-        revoked_at TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
       )
     `);
     console.log('API keys table ready');
-
-    // Add revoked_at column if it doesn't exist
-    try {
-      await run('ALTER TABLE api_keys ADD COLUMN revoked_at TIMESTAMP');
-      console.log('Added revoked_at column to api_keys table');
-    } catch (err) {
-      if (!err.message.includes('duplicate column name')) {
-        console.error('Error adding revoked_at column:', err);
-      }
-    }
 
     // Create API usage table
     await run(`
@@ -121,31 +102,10 @@ const initializeDatabase = async () => {
     `);
     console.log('API usage table ready');
 
-    // Create admin logs table
-    await run(`
-      CREATE TABLE IF NOT EXISTS admin_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        admin_id INTEGER NOT NULL,
-        action TEXT NOT NULL,
-        target_id INTEGER,
-        details TEXT,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (admin_id) REFERENCES users (id)
-      )
-    `);
-    console.log('Admin logs table ready');
-
     // Create indexes
     await run('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)');
     await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key ON api_usage(api_key_id)');
-    await run('CREATE INDEX IF NOT EXISTS idx_admin_logs_admin ON admin_logs(admin_id)');
     console.log('Indexes created');
-
-    // Verify JWT secret
-    if (!process.env.JWT_SECRET) {
-      console.error('WARNING: JWT_SECRET is not set in environment variables');
-      process.exit(1);
-    }
 
     // Check for existing admin user
     const adminUser = await get('SELECT id, username, email, role FROM users WHERE email = ?', ['admin@example.com']);
