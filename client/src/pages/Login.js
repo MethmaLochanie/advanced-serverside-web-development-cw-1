@@ -8,31 +8,46 @@ import {
   Typography,
   Link,
   Alert,
-  Paper
+  Paper,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState([]);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError([]);
     setLoading(true);
 
     const result = await login(email, password);
     if (result.success) {
       navigate('/');
     } else {
-      setError(result.error);
+      if (Array.isArray(result.error)) {
+        setError(result.error.map(e => e.message || e));
+      } else if (typeof result.error === 'string') {
+        setError([result.error]);
+      } else if (result.error && result.error.message) {
+        setError([result.error.message]);
+      } else {
+        setError(['An unknown error occurred.']);
+      }
     }
     setLoading(false);
   };
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
 
   return (
     <Container component="main" maxWidth="xs">
@@ -57,11 +72,11 @@ const Login = () => {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-              {error}
+          {error.length > 0 && error.map((err, idx) => (
+            <Alert key={idx} severity="error" sx={{ mt: 2, width: '100%' }}>
+              {err}
             </Alert>
-          )}
+          ))}
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
@@ -81,11 +96,24 @@ const Login = () => {
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
               type="submit"
