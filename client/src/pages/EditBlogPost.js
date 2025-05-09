@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 const EditBlogPost = () => {
     const [post, setPost] = useState(null);
     const [error, setError] = useState(null);
+    const [loadError, setLoadError] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const { id } = useParams();
@@ -24,7 +25,7 @@ const EditBlogPost = () => {
             setPost(data);
             setLoading(false);
         } catch (err) {
-            setError('Failed to fetch blog post');
+            setLoadError('Failed to fetch blog post');
             setLoading(false);
         }
     };
@@ -62,10 +63,10 @@ const EditBlogPost = () => {
         );
     }
 
-    if (error) {
+    if (loadError) {
         return (
             <Container>
-                <Alert severity="error">{error}</Alert>
+                <Alert severity="error">{loadError}</Alert>
             </Container>
         );
     }
