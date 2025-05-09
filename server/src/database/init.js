@@ -102,9 +102,26 @@ const initializeDatabase = async () => {
     `);
     console.log('API usage table ready');
 
+    // Create blog posts table
+    await run(`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        country_name TEXT NOT NULL,
+        date_of_visit TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    console.log('Blog posts table ready');
+
     // Create indexes
     await run('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)');
     await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key ON api_usage(api_key_id)');
+    await run('CREATE INDEX IF NOT EXISTS idx_blog_posts_user ON blog_posts(user_id)');
     console.log('Indexes created');
 
     // Check for existing admin user
