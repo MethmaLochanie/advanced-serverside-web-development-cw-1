@@ -11,7 +11,7 @@ import {
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
-const BlogPostCard = ({ post, onDelete, isOwner }) => {
+const BlogPostCard = ({ post, onDelete, isOwner, countryInfo }) => {
     const navigate = useNavigate();
 
     const handleEdit = () => {
@@ -36,6 +36,19 @@ const BlogPostCard = ({ post, onDelete, isOwner }) => {
                         Visited on {format(new Date(post.date_of_visit), 'MMMM d, yyyy')}
                     </Typography>
                 </Box>
+
+                {/* Country Insights */}
+                {countryInfo && (
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {countryInfo.flag?.png && (
+                            <img src={countryInfo.flag.png} alt={countryInfo.flag.alt || 'Flag'} style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} />
+                        )}
+                        <Box>
+                            <Typography variant="body2"><strong>Capital:</strong> {countryInfo.capital}</Typography>
+                            <Typography variant="body2"><strong>Currency:</strong> {countryInfo.currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}</Typography>
+                        </Box>
+                    </Box>
+                )}
 
                 <Typography variant="body1" color="text.secondary" paragraph>
                     {post.content}

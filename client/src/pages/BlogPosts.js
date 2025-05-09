@@ -4,22 +4,42 @@ import { useNavigate } from 'react-router-dom';
 import { blogPostService } from '../api/blogPosts';
 import BlogPostCard from '../components/BlogPostCard';
 import { useAuth } from '../context/AuthContext';
+import { fetchCountriesByName } from '../api/countries';
 
 const BlogPosts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [countryData, setCountryData] = useState({});
     const navigate = useNavigate();
     const { user } = useAuth();
 
     useEffect(() => {
-        fetchPosts();
+        fetchPostsAndCountries();
+        // eslint-disable-next-line
     }, []);
 
-    const fetchPosts = async () => {
+    const fetchPostsAndCountries = async () => {
         try {
             const data = await blogPostService.getAllPosts();
             setPosts(data);
+            // Fetch country info for each unique country
+            const uniqueCountries = [...new Set(data.map(post => post.country_name))];
+            const countryInfoMap = {};
+            const apiKey = user?.apiKeys && user.apiKeys[0];
+            for (const country of uniqueCountries) {
+                try {
+                    if (apiKey) {
+                        const countryArr = await fetchCountriesByName(apiKey, country);
+                        if (countryArr && countryArr.length > 0) {
+                            countryInfoMap[country] = countryArr[0];
+                        }
+                    }
+                } catch (e) {
+                    // skip if error
+                }
+            }
+            setCountryData(countryInfoMap);
             setLoading(false);
         } catch (err) {
             setError('Failed to fetch blog posts');
@@ -110,6 +130,7 @@ const BlogPosts = () => {
                         post={post}
                         onDelete={handleDelete}
                         isOwner={user && user.id === post.user_id}
+                        countryInfo={countryData[post.country_name]}
                     />
                 ))
             )}

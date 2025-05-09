@@ -3,6 +3,8 @@ import { Container, Typography, Alert } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { blogPostService } from '../api/blogPosts';
 import BlogPostForm from '../components/BlogPostForm';
+import { fetchCountriesByName } from '../api/countries';
+import { useAuth } from '../context/AuthContext';
 
 const EditBlogPost = () => {
     const [post, setPost] = useState(null);
@@ -10,6 +12,7 @@ const EditBlogPost = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const { id } = useParams();
+    const { user } = useAuth();
 
     useEffect(() => {
         fetchPost();
@@ -27,11 +30,27 @@ const EditBlogPost = () => {
     };
 
     const handleSubmit = async (formData) => {
+        setError(null);
         try {
+            // Validate country
+            const apiKey = user?.apiKeys && user.apiKeys[0];
+            if (!apiKey) {
+                setError('No API key found for country validation.');
+                return;
+            }
+            const countries = await fetchCountriesByName(apiKey, formData.country_name);
+            if (!countries || countries.length === 0) {
+                setError('Invalid country name. Please enter a valid country.');
+                return;
+            }
             await blogPostService.updatePost(id, formData);
             navigate('/posts');
         } catch (err) {
-            setError('Failed to update blog post. Please try again.');
+            if (err.response && err.response.status === 404) {
+                setError('Invalid country name. Please enter a valid country.');
+            } else {
+                setError('Failed to update blog post. Please try again.');
+            }
         }
     };
 
