@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const countryRoutes = require('./routes/countries');
 const apiKeyRoutes = require('./routes/apiKeys');
 const adminRoutes = require('./routes/admin');
+const blogPostRoutes = require('./routes/blogPostRoutes');
 const { initializeDatabase } = require('./database/init');
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/countries', countryRoutes);
 app.use('/api/keys', apiKeyRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/posts', blogPostRoutes);
 
 // Initialize database
 initializeDatabase();
