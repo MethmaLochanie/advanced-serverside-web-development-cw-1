@@ -1,5 +1,20 @@
 const jwt = require('jsonwebtoken');
 const { db } = require('../database/init');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiting for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts
+  message: { message: 'Too many login attempts, please try again after 15 minutes' }
+});
+
+// Rate limiting for registration
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 attempts
+  message: { message: 'Too many registration attempts, please try again after an hour' }
+});
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -22,7 +37,7 @@ const verifyToken = (req, res, next) => {
 
     // Verify user exists and is active
     db.get(
-      'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
+      'SELECT id, username, email, role, is_active, last_login FROM users WHERE id = ?',
       [decoded.id],
       (err, user) => {
         if (err) {
@@ -38,12 +53,20 @@ const verifyToken = (req, res, next) => {
           return res.status(401).json({ message: 'Account is inactive' });
         }
 
+        // Check if token was issued before last password change
+        if (user.last_password_change && decoded.iat < new Date(user.last_password_change).getTime() / 1000) {
+          return res.status(401).json({ message: 'Token expired due to password change' });
+        }
+
         req.user = user;
         next();
       }
     );
   } catch (err) {
     console.error('Token verification failed:', err.message);
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -99,5 +122,7 @@ const verifyApiKey = (req, res, next) => {
 module.exports = {
   verifyToken,
   verifyApiKey,
-  isAdmin
+  isAdmin,
+  loginLimiter,
+  registerLimiter
 }; 

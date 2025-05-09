@@ -1,21 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db } = require('../database/init');
-const crypto = require('crypto');
 
-const register = (req, res) => {
+const register = async (req, res) => {
   const { username, email, password } = req.body;
 
-  // Input validation
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
-
-  // Hash password
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) {
-      return res.status(500).json({ message: 'Error hashing password' });
-    }
+  try {
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert user
     db.run(
@@ -23,14 +15,17 @@ const register = (req, res) => {
       [username, email, hashedPassword],
       function(err) {
         if (err) {
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(409).json({ message: 'Username or email already exists' });
+          if (err.message.includes('UNIQUE constraint failed: users.email')) {
+            return res.status(409).json({ message: 'Email already exists' });
           }
-          return res.status(500).json({ message: 'Error creating user' });
+          if (err.message.includes('UNIQUE constraint failed: users.username')) {
+            return res.status(409).json({ message: 'Username already exists' });
+          }
+          return res.status(500).json({ message: 'Internal server error' });
         }
 
         // Generate initial API key
-        const apiKey = crypto.randomBytes(32).toString('hex');
+        const apiKey = require('crypto').randomBytes(32).toString('hex');
         db.run(
           'INSERT INTO api_keys (user_id, api_key) VALUES (?, ?)',
           [this.lastID, apiKey],
@@ -47,69 +42,80 @@ const register = (req, res) => {
         );
       }
     );
-  });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Error during registration' });
+  }
 };
 
-const login = (req, res) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Input validation
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
+  try {
+    // Find user
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
 
-  // Find user
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: 'Database error' });
-    }
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'No account found with this email address' });
     }
 
     // Check password
-    bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error verifying password' });
-      }
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect password' });
+    }
 
-      // Generate JWT token
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      // Update last login
-      db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
-
-      // Get user's API keys
-      db.all(
-        'SELECT api_key FROM api_keys WHERE user_id = ? AND is_active = 1',
+    // Update last login
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
         [user.id],
-        (err, apiKeys) => {
-          if (err) {
-            return res.status(500).json({ message: 'Error retrieving API keys' });
-          }
-
-          const userData = {
-            token,
-            user: {
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              role: user.role,
-              apiKeys: apiKeys.map(k => k.api_key)
-            }
-          };
-          res.json(userData);
+        (err) => {
+          if (err) reject(err);
+          else resolve();
         }
       );
     });
-  });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    // Get user's API keys
+    const apiKeys = await new Promise((resolve, reject) => {
+      db.all(
+        'SELECT api_key FROM api_keys WHERE user_id = ? AND is_active = 1',
+        [user.id],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+
+    const userData = {
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        apiKeys: apiKeys.map(k => k.api_key)
+      }
+    };
+    res.json(userData);
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Error during login' });
+  }
 };
 
 const validateToken = (req, res) => {
@@ -118,7 +124,7 @@ const validateToken = (req, res) => {
 
   // Get fresh user data
   db.get(
-    'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
+    'SELECT id, username, email, role FROM users WHERE id = ?',
     [userId],
     (err, user) => {
       if (err) {
@@ -127,28 +133,17 @@ const validateToken = (req, res) => {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      if (!user.is_active) {
-        return res.status(401).json({ message: 'Account is inactive' });
-      }
 
       // Get user's API keys
       db.all(
-        'SELECT id, api_key, is_active, created_at, last_used FROM api_keys WHERE user_id = ? AND is_active = 1',
+        'SELECT api_key FROM api_keys WHERE user_id = ? AND is_active = 1',
         [userId],
         (err, apiKeys) => {
           if (err) {
             return res.status(500).json({ message: 'Error retrieving API keys' });
           }
 
-          // Generate a fresh token
-          const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-          );
-
           res.json({
-            token,
             user: {
               id: user.id,
               username: user.username,
