@@ -15,10 +15,13 @@ const register = async (req, res) => {
       [username, email, hashedPassword],
       function(err) {
         if (err) {
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(409).json({ message: 'Username or email already exists' });
+          if (err.message.includes('UNIQUE constraint failed: users.email')) {
+            return res.status(409).json({ message: 'Email already exists' });
           }
-          return res.status(500).json({ message: 'Error creating user' });
+          if (err.message.includes('UNIQUE constraint failed: users.username')) {
+            return res.status(409).json({ message: 'Username already exists' });
+          }
+          return res.status(500).json({ message: 'Internal server error' });
         }
 
         // Generate initial API key
@@ -58,13 +61,13 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'No account found with this email address' });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Incorrect password' });
     }
 
     // Update last login
