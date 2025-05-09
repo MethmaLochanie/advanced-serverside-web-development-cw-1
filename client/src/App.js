@@ -5,12 +5,16 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import PublicLayout from './components/PublicLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Countries from './pages/Countries';
 import ApiKeys from './pages/ApiKeys';
 import AdminDashboard from './components/admin/AdminDashboard';
+import BlogPosts from './pages/BlogPosts';
+import CreateBlogPost from './pages/CreateBlogPost';
+import EditBlogPost from './pages/EditBlogPost';
 
 const ProtectedRoute = ({ children, requireAdmin }) => {
   const { user, isAuthenticated } = useAuth();
@@ -48,6 +52,11 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/posts" element={
+              <PublicLayout>
+                <BlogPosts />
+              </PublicLayout>
+            } />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={
@@ -75,9 +84,25 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
+
+            {/* Blog post routes */}
+            <Route path="/posts/create" element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateBlogPost />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/posts/edit/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EditBlogPost />
+                </Layout>
+              </ProtectedRoute>
+            } />
             
             {/* Default route */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/posts" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
