@@ -145,30 +145,30 @@ const initializeDatabase = async () => {
       console.log('Admin user exists:', { id: adminUser.id, username: adminUser.username, role: adminUser.role });
     } else {
       // Create default admin user
-      const defaultAdmin = {
-        username: 'admin',
-        email: 'admin@example.com',
-        password: 'adminpassword',
-        role: 'admin'
-      };
+      // const defaultAdmin = {
+      //   username: 'admin',
+      //   email: 'admin@example.com',
+      //   password: 'adminpassword',
+      //   role: 'admin'
+      // };
 
-      const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
+      // const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
       
-      await new Promise((resolve, reject) => {
-        db.run(
-          'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-          [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.role],
-          function(err) {
-            if (err) {
-              console.error('Error creating admin user:', err);
-              reject(err);
-            } else {
-              console.log('Default admin user created');
-              resolve();
-            }
-          }
-        );
-      });
+      // await new Promise((resolve, reject) => {
+      //   db.run(
+      //     'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+      //     [defaultAdmin.username, defaultAdmin.email, hashedPassword, defaultAdmin.role],
+      //     function(err) {
+      //       if (err) {
+      //         console.error('Error creating admin user:', err);
+      //         reject(err);
+      //       } else {
+      //         console.log('Default admin user created');
+      //         resolve();
+      //       }
+      //     }
+      //   );
+      // });
     }
 
     console.log('Database initialization completed successfully');

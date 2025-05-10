@@ -216,6 +216,7 @@ const getFollowedUsersPosts = async (req, res) => {
             db.all(`
                 SELECT 
                     bp.*,
+                    u.id as author_id,
                     u.username as author_username,
                     u.email as author_email
                 FROM blog_posts bp

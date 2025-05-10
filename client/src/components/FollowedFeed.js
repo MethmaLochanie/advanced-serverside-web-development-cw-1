@@ -14,12 +14,14 @@ import {
 } from '@mui/material';
 import { getFollowedUsersPosts } from '../api/followApi';
 import { useAuth } from '../context/AuthContext';
+import { fetchCountriesByName } from '../api/countries';
 
 const FollowedFeed = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [countryData, setCountryData] = useState({});
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -29,12 +31,12 @@ const FollowedFeed = () => {
 
     const fetchPosts = async () => {
         if (!user) return;
-        
         setLoading(true);
         try {
             const data = await getFollowedUsersPosts(user.id, page);
             setPosts(data.posts);
             setTotalPages(data.pagination.totalPages);
+            await fetchCountryInfo(data.posts);
         } catch (error) {
             console.error('Error fetching followed posts:', error);
         } finally {
@@ -42,8 +44,28 @@ const FollowedFeed = () => {
         }
     };
 
+    const fetchCountryInfo = async (postsData) => {
+        const uniqueCountries = [...new Set(postsData.map(post => post.country_name))];
+        const countryInfoMap = {};
+        const apiKey = user?.apiKeys && user.apiKeys[0];
+        for (const country of uniqueCountries) {
+            try {
+                if (apiKey) {
+                    const countryArr = await fetchCountriesByName(apiKey, country);
+                    if (countryArr && countryArr.length > 0) {
+                        countryInfoMap[country] = countryArr[0];
+                    }
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        setCountryData(countryInfoMap);
+    };
+
     useEffect(() => {
         fetchPosts();
+        // eslint-disable-next-line
     }, [user, page]);
 
     const handlePageChange = (event, value) => {
@@ -101,6 +123,18 @@ const FollowedFeed = () => {
                             />
                             <Divider />
                             <CardContent>
+                                {/* Country Insights */}
+                                {countryData[post.country_name] && (
+                                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        {countryData[post.country_name].flag?.png && (
+                                            <img src={countryData[post.country_name].flag.png} alt={countryData[post.country_name].flag.alt || 'Flag'} style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} />
+                                        )}
+                                        <Box>
+                                            <Typography variant="body2"><strong>Capital:</strong> {countryData[post.country_name].capital}</Typography>
+                                            <Typography variant="body2"><strong>Currency:</strong> {countryData[post.country_name].currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}</Typography>
+                                        </Box>
+                                    </Box>
+                                )}
                                 <Typography variant="body1" paragraph>
                                     {post.content}
                                 </Typography>
