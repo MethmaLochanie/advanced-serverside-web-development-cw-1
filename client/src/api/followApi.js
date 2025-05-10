@@ -9,9 +9,8 @@ const getAuthToken = () => {
 };
 
 // Follow a user
-export const followUser = async (followerId, followingId) => {
+export const followUser = async (followingId) => {
     const response = await axios.post(`${API_URL}/follow/follow`, {
-        followerId,
         followingId
     }, {
         headers: {
@@ -22,9 +21,8 @@ export const followUser = async (followerId, followingId) => {
 };
 
 // Unfollow a user
-export const unfollowUser = async (followerId, followingId) => {
+export const unfollowUser = async (followingId) => {
     const response = await axios.post(`${API_URL}/follow/unfollow`, {
-        followerId,
         followingId
     }, {
         headers: {

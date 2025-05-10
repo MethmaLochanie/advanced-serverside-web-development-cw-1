@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import { followUser, unfollowUser } from '../api/followApi';
 import { useAuth } from '../context/AuthContext';
@@ -14,9 +14,9 @@ const FollowButton = ({ targetUserId, initialIsFollowing = false, onFollowChange
         setIsLoading(true);
         try {
             if (isFollowing) {
-                await unfollowUser(user.id, targetUserId);
+                await unfollowUser(targetUserId);
             } else {
-                await followUser(user.id, targetUserId);
+                await followUser(targetUserId);
             }
             setIsFollowing(!isFollowing);
             if (onFollowChange) onFollowChange();

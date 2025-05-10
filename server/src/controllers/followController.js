@@ -2,7 +2,8 @@ const { db } = require('../database/init');
 
 // Follow a user
 const followUser = async (req, res) => {
-    const { followerId, followingId } = req.body;
+    const followerId = req.user.id; // Always use authenticated user
+    const { followingId } = req.body;
 
     // Prevent self-following
     if (followerId === followingId) {
@@ -63,7 +64,8 @@ const followUser = async (req, res) => {
 
 // Unfollow a user
 const unfollowUser = async (req, res) => {
-    const { followerId, followingId } = req.body;
+    const followerId = req.user.id; // Always use authenticated user
+    const { followingId } = req.body;
 
     // Prevent self-unfollowing
     if (followerId === followingId) {
