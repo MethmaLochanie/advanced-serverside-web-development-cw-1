@@ -15,6 +15,8 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import BlogPosts from './pages/BlogPosts';
 import CreateBlogPost from './pages/CreateBlogPost';
 import EditBlogPost from './pages/EditBlogPost';
+import Profile from './pages/Profile';
+import FollowedFeed from './components/FollowedFeed';
 
 const ProtectedRoute = ({ children, requireAdmin }) => {
   const { user, isAuthenticated } = useAuth();
@@ -97,6 +99,22 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <EditBlogPost />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Profile and following routes */}
+            <Route path="/profile/:userId" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Profile />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/feed" element={
+              <ProtectedRoute>
+                <Layout>
+                  <FollowedFeed />
                 </Layout>
               </ProtectedRoute>
             } />

@@ -118,6 +118,20 @@ const initializeDatabase = async () => {
     `);
     console.log('Blog posts table ready');
 
+    // Create followers table
+    await run(`
+      CREATE TABLE IF NOT EXISTS followers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        follower_id INTEGER NOT NULL,
+        following_id INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (follower_id) REFERENCES users(id),
+        FOREIGN KEY (following_id) REFERENCES users(id),
+        UNIQUE(follower_id, following_id)
+      )
+    `);
+    console.log('Followers table ready');
+
     // Create indexes
     await run('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)');
     await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key ON api_usage(api_key_id)');
