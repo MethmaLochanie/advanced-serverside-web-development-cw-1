@@ -105,6 +105,58 @@ const blogPostController = {
             console.error('Error deleting blog post:', error);
             res.status(500).json({ error: 'Error deleting blog post' });
         }
+    },
+
+    // Search blog posts by country
+    async searchByCountry(req, res) {
+        try {
+            const { country, page = 1, limit = 10 } = req.query;
+            if (!country) {
+                return res.status(400).json({ error: 'Country name is required' });
+            }
+
+            const posts = await BlogPost.findByCountry(country, parseInt(page), parseInt(limit));
+            const total = await BlogPost.getTotalCountByCountry(country);
+
+            res.json({
+                posts,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(total / parseInt(limit)),
+                    totalItems: total,
+                    itemsPerPage: parseInt(limit)
+                }
+            });
+        } catch (error) {
+            console.error('Error searching blog posts by country:', error);
+            res.status(500).json({ error: 'Error searching blog posts' });
+        }
+    },
+
+    // Search blog posts by username
+    async searchByUsername(req, res) {
+        try {
+            const { username, page = 1, limit = 10 } = req.query;
+            if (!username) {
+                return res.status(400).json({ error: 'Username is required' });
+            }
+
+            const posts = await BlogPost.findByUsername(username, parseInt(page), parseInt(limit));
+            const total = await BlogPost.getTotalCountByUsername(username);
+
+            res.json({
+                posts,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(total / parseInt(limit)),
+                    totalItems: total,
+                    itemsPerPage: parseInt(limit)
+                }
+            });
+        } catch (error) {
+            console.error('Error searching blog posts by username:', error);
+            res.status(500).json({ error: 'Error searching blog posts' });
+        }
     }
 };
 

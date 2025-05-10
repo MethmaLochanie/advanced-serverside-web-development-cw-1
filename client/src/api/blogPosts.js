@@ -43,5 +43,21 @@ export const blogPostService = {
             }
         });
         return response.data;
+    },
+
+    // Search blog posts by country
+    searchByCountry: async (country, page = 1, limit = 10) => {
+        const response = await axios.get(`${API_URL}/posts/search/country`, {
+            params: { country, page, limit }
+        });
+        return response.data;
+    },
+
+    // Search blog posts by username
+    searchByUsername: async (username, page = 1, limit = 10) => {
+        const response = await axios.get(`${API_URL}/posts/search/username`, {
+            params: { username, page, limit }
+        });
+        return response.data;
     }
 }; 

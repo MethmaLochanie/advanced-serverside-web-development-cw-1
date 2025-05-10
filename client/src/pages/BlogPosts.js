@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Button, Box, Paper } from '@mui/material';
+import { Container, Typography, Button, Box, Paper, TextField, Pagination, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { blogPostService } from '../api/blogPosts';
 import BlogPostCard from '../components/BlogPostCard';
@@ -11,40 +11,93 @@ const BlogPosts = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [countryData, setCountryData] = useState({});
+    const [searchType, setSearchType] = useState('all'); // 'all', 'country', 'username'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10
+    });
     const navigate = useNavigate();
     const { user } = useAuth();
 
     useEffect(() => {
-        fetchPostsAndCountries();
-        // eslint-disable-next-line
-    }, []);
+        if (searchType === 'all') {
+            fetchPostsAndCountries();
+        }
+    }, [searchType]);
 
     const fetchPostsAndCountries = async () => {
         try {
             const data = await blogPostService.getAllPosts();
             setPosts(data);
-            // Fetch country info for each unique country
-            const uniqueCountries = [...new Set(data.map(post => post.country_name))];
-            const countryInfoMap = {};
-            const apiKey = user?.apiKeys && user.apiKeys[0];
-            for (const country of uniqueCountries) {
-                try {
-                    if (apiKey) {
-                        const countryArr = await fetchCountriesByName(apiKey, country);
-                        if (countryArr && countryArr.length > 0) {
-                            countryInfoMap[country] = countryArr[0];
-                        }
-                    }
-                } catch (e) {
-                    // skip if error
-                }
-            }
-            setCountryData(countryInfoMap);
+            await fetchCountryInfo(data);
             setLoading(false);
         } catch (err) {
             setError('Failed to fetch blog posts');
             setLoading(false);
         }
+    };
+
+    const fetchCountryInfo = async (postsData) => {
+        const uniqueCountries = [...new Set(postsData.map(post => post.country_name))];
+        const countryInfoMap = {};
+        const apiKey = user?.apiKeys && user.apiKeys[0];
+        for (const country of uniqueCountries) {
+            try {
+                if (apiKey) {
+                    const countryArr = await fetchCountriesByName(apiKey, country);
+                    if (countryArr && countryArr.length > 0) {
+                        countryInfoMap[country] = countryArr[0];
+                    }
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        setCountryData(countryInfoMap);
+    };
+
+    const handleSearch = async (page = 1) => {
+        if (!searchQuery.trim()) {
+            setSearchType('all');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            let response;
+            if (searchType === 'country') {
+                response = await blogPostService.searchByCountry(searchQuery, page);
+            } else if (searchType === 'username') {
+                response = await blogPostService.searchByUsername(searchQuery, page);
+            }
+
+            if (response) {
+                setPosts(response.posts);
+                setPagination(response.pagination);
+                await fetchCountryInfo(response.posts);
+            }
+        } catch (err) {
+            setError('Failed to search blog posts');
+        }
+        setLoading(false);
+    };
+
+    const handlePageChange = (event, value) => {
+        handleSearch(value);
+    };
+
+    const handleSearchTypeChange = (type) => {
+        setSearchType(type);
+        setSearchQuery('');
+        setPagination({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: 10
+        });
     };
 
     const handleDelete = async (postId) => {
@@ -58,82 +111,97 @@ const BlogPosts = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <Container>
-                <Typography>Loading...</Typography>
-            </Container>
-        );
-    }
-
-    if (error) {
-        return (
-            <Container>
-                <Typography color="error">{error}</Typography>
-            </Container>
-        );
-    }
-
     return (
-        <Container>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom>
+                <Typography variant="h4" gutterBottom>
                     Travel Stories
                 </Typography>
-                <Typography variant="subtitle1" color="text.secondary" paragraph>
-                    Discover amazing travel experiences shared by our community
-                </Typography>
-                {!user && (
-                    <Paper sx={{ p: 3, mb: 4, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-                        <Typography variant="h6" gutterBottom>
-                            Join Our Travel Community
-                        </Typography>
-                        <Typography paragraph>
-                            Share your own travel stories and connect with fellow travelers. Sign up now to start sharing your adventures!
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={() => navigate('/register')}
-                            >
-                                Sign Up
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="inherit"
-                                onClick={() => navigate('/login')}
-                            >
-                                Sign In
-                            </Button>
-                        </Box>
-                    </Paper>
+                
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Button
+                            variant={searchType === 'all' ? 'contained' : 'outlined'}
+                            onClick={() => handleSearchTypeChange('all')}
+                            fullWidth
+                        >
+                            All Posts
+                        </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Button
+                            variant={searchType === 'country' ? 'contained' : 'outlined'}
+                            onClick={() => handleSearchTypeChange('country')}
+                            fullWidth
+                        >
+                            Search by Country
+                        </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Button
+                            variant={searchType === 'username' ? 'contained' : 'outlined'}
+                            onClick={() => handleSearchTypeChange('username')}
+                            fullWidth
+                        >
+                            Search by Username
+                        </Button>
+                    </Grid>
+                </Grid>
+
+                {(searchType === 'country' || searchType === 'username') && (
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        <TextField
+                            fullWidth
+                            label={`Search by ${searchType}`}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={() => handleSearch()}
+                            sx={{ minWidth: 100 }}
+                        >
+                            Search
+                        </Button>
+                    </Box>
                 )}
-                {user && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate('/posts/create')}
-                        sx={{ mb: 4 }}
-                    >
-                        Share Your Story
-                    </Button>
+
+                {error && (
+                    <Typography color="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Typography>
+                )}
+
+                {loading ? (
+                    <Typography>Loading...</Typography>
+                ) : posts.length === 0 ? (
+                    <Typography>No blog posts found.</Typography>
+                ) : (
+                    <>
+                        {posts.map(post => (
+                            <BlogPostCard
+                                key={post.id}
+                                post={post}
+                                onDelete={handleDelete}
+                                isOwner={user && user.id === post.user_id}
+                                countryInfo={countryData[post.country_name]}
+                            />
+                        ))}
+                        
+                        {pagination.totalPages > 1 && (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                                <Pagination
+                                    count={pagination.totalPages}
+                                    page={pagination.currentPage}
+                                    onChange={handlePageChange}
+                                    color="primary"
+                                />
+                            </Box>
+                        )}
+                    </>
                 )}
             </Box>
-
-            {posts.length === 0 ? (
-                <Typography>No blog posts yet. Be the first to share your travel story!</Typography>
-            ) : (
-                posts.map(post => (
-                    <BlogPostCard
-                        key={post.id}
-                        post={post}
-                        onDelete={handleDelete}
-                        isOwner={user && user.id === post.user_id}
-                        countryInfo={countryData[post.country_name]}
-                    />
-                ))
-            )}
         </Container>
     );
 };
