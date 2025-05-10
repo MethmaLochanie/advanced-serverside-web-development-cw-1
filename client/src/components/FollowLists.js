@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -14,13 +14,10 @@ import {
     Divider,
     Link
 } from '@mui/material';
-import { getFollowers, getFollowing } from '../api/followApi';
+import FollowButton from './FollowButton';
 
-const FollowLists = ({ userId }) => {
-    const [value, setValue] = useState(0);
-    const [followers, setFollowers] = useState([]);
-    const [following, setFollowing] = useState([]);
-    const [loading, setLoading] = useState(false);
+const FollowLists = ({ userId, followers, following, loading, refreshLists }) => {
+    const [value, setValue] = React.useState(0);
     const navigate = useNavigate();
 
     const handleTabChange = (event, newValue) => {
@@ -31,28 +28,7 @@ const FollowLists = ({ userId }) => {
         navigate(`/profile/${userId}`);
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                if (value === 0) {
-                    const data = await getFollowers(userId);
-                    setFollowers(data.followers || []);
-                } else {
-                    const data = await getFollowing(userId);
-                    setFollowing(data.following || []);
-                }
-            } catch (error) {
-                console.error('Error fetching follow data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [userId, value]);
-
-    const renderList = (items) => {
+    const renderList = (items, isFollowingTab) => {
         if (loading) {
             return (
                 <Box display="flex" justifyContent="center" my={3}>
@@ -69,26 +45,43 @@ const FollowLists = ({ userId }) => {
             );
         }
 
+        // Get a set of user IDs you are following
+        const followingIds = new Set(following.map(u => u.id));
+
         return (
             <List>
                 {items.map((user, index) => (
                     <React.Fragment key={user.id}>
-                        <ListItem 
-                            button 
-                            onClick={() => handleUserClick(user.id)}
-                            sx={{ cursor: 'pointer' }}
+                        <ListItem
+                            secondaryAction={
+                                <FollowButton
+                                    targetUserId={user.id}
+                                    initialIsFollowing={
+                                        isFollowingTab
+                                            ? true
+                                            : followingIds.has(user.id)
+                                    }
+                                    onFollowChange={refreshLists}
+                                />
+                            }
                         >
                             <ListItemAvatar>
-                                <Avatar>{user.username[0].toUpperCase()}</Avatar>
+                                <Avatar
+                                    sx={{ cursor: 'pointer' }}
+                                    onClick={() => handleUserClick(user.id)}
+                                >
+                                    {user.username[0].toUpperCase()}
+                                </Avatar>
                             </ListItemAvatar>
                             <ListItemText
                                 primary={
                                     <Link
                                         component="span"
-                                        sx={{ 
+                                        sx={{
                                             cursor: 'pointer',
                                             '&:hover': { textDecoration: 'underline' }
                                         }}
+                                        onClick={() => handleUserClick(user.id)}
                                     >
                                         {user.username}
                                     </Link>
@@ -114,7 +107,10 @@ const FollowLists = ({ userId }) => {
                 <Tab label={`Followers (${followers.length})`} />
                 <Tab label={`Following (${following.length})`} />
             </Tabs>
-            {value === 0 ? renderList(followers) : renderList(following)}
+            {value === 0
+                ? renderList(followers, false) // Followers tab
+                : renderList(following, true)  // Following tab
+            }
         </Box>
     );
 };

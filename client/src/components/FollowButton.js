@@ -1,9 +1,9 @@
-import { useState} from 'react';
+import React, { useState } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import { followUser, unfollowUser } from '../api/followApi';
 import { useAuth } from '../context/AuthContext';
 
-const FollowButton = ({ targetUserId, initialIsFollowing = false }) => {
+const FollowButton = ({ targetUserId, initialIsFollowing = false, onFollowChange }) => {
     const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
     const [isLoading, setIsLoading] = useState(false);
     const { user } = useAuth();
@@ -19,6 +19,7 @@ const FollowButton = ({ targetUserId, initialIsFollowing = false }) => {
                 await followUser(user.id, targetUserId);
             }
             setIsFollowing(!isFollowing);
+            if (onFollowChange) onFollowChange();
         } catch (error) {
             console.error('Error toggling follow:', error);
         } finally {

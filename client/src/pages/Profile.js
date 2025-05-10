@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Container,
@@ -20,6 +20,7 @@ import FollowButton from '../components/FollowButton';
 import FollowLists from '../components/FollowLists';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { getFollowers, getFollowing } from '../api/followApi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -30,6 +31,9 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [suggestedUsers, setSuggestedUsers] = useState([]);
     const [showSuggestedUsers, setShowSuggestedUsers] = useState(false);
+    const [followers, setFollowers] = useState([]);
+    const [following, setFollowing] = useState([]);
+    const [listsLoading, setListsLoading] = useState(false);
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -50,6 +54,24 @@ const Profile = () => {
 
         fetchUserProfile();
     }, [userId]);
+
+    const refreshLists = useCallback(async () => {
+        setListsLoading(true);
+        try {
+            const followersData = await getFollowers(userId);
+            setFollowers(followersData.followers || []);
+            const followingData = await getFollowing(userId);
+            setFollowing(followingData.following || []);
+        } catch (error) {
+            console.error('Error refreshing follow data:', error);
+        } finally {
+            setListsLoading(false);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        refreshLists();
+    }, [refreshLists]);
 
     const fetchSuggestedUsers = async () => {
         try {
@@ -100,18 +122,26 @@ const Profile = () => {
                         </Typography>
                     </Box>
                     {currentUser && currentUser.id !== profileUser.id && (
-                        <FollowButton targetUserId={profileUser.id} />
+                        <FollowButton
+                            targetUserId={profileUser.id}
+                            initialIsFollowing={!!following.find(u => u.id === profileUser.id)}
+                            onFollowChange={refreshLists}
+                        />
                     )}
                 </Box>
-
                 <Divider sx={{ mb: 3 }} />
-
                 <Box display="flex" flexDirection="column" alignItems="center">
                     <Box sx={{ width: '100%', maxWidth: 600 }}>
-                        <FollowLists userId={profileUser.id} />
+                        <FollowLists
+                            userId={profileUser.id}
+                            followers={followers}
+                            following={following}
+                            loading={listsLoading}
+                            refreshLists={refreshLists}
+                        />
                     </Box>
                     {currentUser && currentUser.id === profileUser.id && (
-                        <Box 
+                        <Box
                             sx={{
                                 background: "#fafafa",
                                 borderRadius: 2,
@@ -135,7 +165,7 @@ const Profile = () => {
                                     Show Suggested Users
                                 </Button>
                             ) : (
-                                <List sx={{ textAlign: 'left' }}> {/* List items left-aligned within centered container */}
+                                <List sx={{ textAlign: 'left' }}>
                                     {suggestedUsers.length === 0 && (
                                         <Typography color="textSecondary" align="center">
                                             No users to suggest.
@@ -145,7 +175,11 @@ const Profile = () => {
                                         <ListItem
                                             key={user.id}
                                             secondaryAction={
-                                                <FollowButton targetUserId={user.id} />
+                                                <FollowButton
+                                                    targetUserId={user.id}
+                                                    initialIsFollowing={false}
+                                                    onFollowChange={refreshLists}
+                                                />
                                             }
                                             sx={{ px: 0 }}
                                         >
@@ -162,9 +196,7 @@ const Profile = () => {
                                                             cursor: "pointer",
                                                             "&:hover": { textDecoration: "underline" },
                                                         }}
-                                                        onClick={() =>
-                                                            window.location.href = `/profile/${user.id}`
-                                                        }
+                                                        onClick={() => window.location.href = `/profile/${user.id}`}
                                                     >
                                                         {user.username}
                                                     </Link>
