@@ -39,8 +39,8 @@ const PublicLayout = ({ children }) => {
               <Typography variant="body1" sx={{ mr: 2 }}>
                 {user.username} ({user.role || 'user'})
               </Typography>
-              <Button color="inherit" onClick={() => navigate('/dashboard')}>
-                Dashboard
+              <Button color="inherit" onClick={() => navigate('/posts')}>
+                Posts
               </Button>
               <Button color="inherit" onClick={() => navigate('/posts/create')}>
                 Create Post
