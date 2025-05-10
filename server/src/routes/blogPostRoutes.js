@@ -5,6 +5,8 @@ const { verifyToken } = require('../middleware/auth');
 
 // Public routes
 router.get('/', blogPostController.getAllPosts);
+router.get('/search/country', blogPostController.searchByCountry);
+router.get('/search/username', blogPostController.searchByUsername);
 router.get('/:id', blogPostController.getPost);
 
 // Protected routes (require authentication)
