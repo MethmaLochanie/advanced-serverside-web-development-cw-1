@@ -95,6 +95,68 @@ class BlogPost {
             });
         });
     }
+
+    static async findByCountry(countryName, page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+        return new Promise((resolve, reject) => {
+            db.all(`
+                SELECT bp.*, u.username 
+                FROM blog_posts bp
+                JOIN users u ON bp.user_id = u.id
+                WHERE LOWER(bp.country_name) LIKE LOWER(?)
+                ORDER BY bp.created_at DESC
+                LIMIT ? OFFSET ?
+            `, [`%${countryName}%`, limit, offset], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    static async findByUsername(username, page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+        return new Promise((resolve, reject) => {
+            db.all(`
+                SELECT bp.*, u.username 
+                FROM blog_posts bp
+                JOIN users u ON bp.user_id = u.id
+                WHERE LOWER(u.username) LIKE LOWER(?)
+                ORDER BY bp.created_at DESC
+                LIMIT ? OFFSET ?
+            `, [`%${username}%`, limit, offset], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    static async getTotalCountByCountry(countryName) {
+        return new Promise((resolve, reject) => {
+            db.get(`
+                SELECT COUNT(*) as total
+                FROM blog_posts bp
+                JOIN users u ON bp.user_id = u.id
+                WHERE LOWER(bp.country_name) LIKE LOWER(?)
+            `, [`%${countryName}%`], (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.total : 0);
+            });
+        });
+    }
+
+    static async getTotalCountByUsername(username) {
+        return new Promise((resolve, reject) => {
+            db.get(`
+                SELECT COUNT(*) as total
+                FROM blog_posts bp
+                JOIN users u ON bp.user_id = u.id
+                WHERE LOWER(u.username) LIKE LOWER(?)
+            `, [`%${username}%`], (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.total : 0);
+            });
+        });
+    }
 }
 
 module.exports = BlogPost; 
