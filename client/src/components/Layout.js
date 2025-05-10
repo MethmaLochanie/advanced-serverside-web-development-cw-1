@@ -22,7 +22,9 @@ import {
   Public,
   VpnKey,
   Logout,
-  AdminPanelSettings
+  AdminPanelSettings,
+  Feed as FeedIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,7 +41,9 @@ const Layout = ({ children }) => {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Countries', icon: <Public />, path: '/countries' },
-    { text: 'API Keys', icon: <VpnKey />, path: '/api-keys' }
+    { text: 'API Keys', icon: <VpnKey />, path: '/api-keys' },
+    { text: 'Feed', icon: <FeedIcon />, path: '/feed' },
+    { text: 'Profile', icon: <PersonIcon />, path: `/profile/${user?.id}` }
   ];
 
   const handleDrawerToggle = () => {
@@ -121,12 +125,28 @@ const Layout = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {currentTitle}
           </Typography>
-          <Typography variant="body1" sx={{ mr: 2 }}>
-            {user?.username} ({user?.role || 'user'})
-          </Typography>
-          <Button color="inherit" onClick={handleLogout} startIcon={<Logout />}>
-            Logout
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button 
+              color="inherit" 
+              onClick={() => handleNavigation('/feed')}
+              startIcon={<FeedIcon />}
+            >
+              Feed
+            </Button>
+            <Button 
+              color="inherit" 
+              onClick={() => handleNavigation(`/profile/${user?.id}`)}
+              startIcon={<PersonIcon />}
+            >
+              Profile
+            </Button>
+            <Typography variant="body1" sx={{ mr: 2 }}>
+              {user?.username} ({user?.role || 'user'})
+            </Typography>
+            <Button color="inherit" onClick={handleLogout} startIcon={<Logout />}>
+              Logout
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
       <Box
