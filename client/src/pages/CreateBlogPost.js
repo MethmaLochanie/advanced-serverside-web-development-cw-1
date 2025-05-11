@@ -1,40 +1,50 @@
 import React, { useState } from 'react';
-import { Container, Typography, Alert } from '@mui/material';
+import { Container, Typography, Alert, CircularProgress, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { blogPostService } from '../api/blogPosts';
 import BlogPostForm from '../components/BlogPostForm';
-import { fetchCountriesByName } from '../api/countries';
 import { useAuth } from '../context/AuthContext';
+import { useBlogPosts } from '../hooks/useBlogPosts';
+import { useCountries } from '../hooks/useCountries';
 
 const CreateBlogPost = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { 
+        createPost,
+        loading: postLoading,
+        error: postError 
+    } = useBlogPosts();
+    const { 
+        searchCountries, 
+        loading: countryLoading, 
+        error: countryError 
+    } = useCountries();
+
     const handleSubmit = async (formData) => {
         setError(null);
         try {
             // Validate country
-            const apiKey = user?.apiKeys && user.apiKeys[0];
-            if (!apiKey) {
-                setError('No API key found for country validation.');
-                return;
-            }
-            const countries = await fetchCountriesByName(apiKey, formData.country_name);
+            const countries = await searchCountries(formData.country_name);
             if (!countries || countries.length === 0) {
                 setError('Invalid country name. Please enter a valid country.');
                 return;
             }
-            // Optionally, you can enhance formData with country info here
-            await blogPostService.createPost(formData);
+            await createPost(formData);
             navigate('/posts');
         } catch (err) {
-            if (err.response && err.response.status === 404) {
-                setError('Invalid country name. Please enter a valid country.');
-            } else {
-                setError('Failed to create blog post. Please try again.');
-            }
+            console.error('Error creating blog post:', err);
+            setError('Failed to create blog post. Please try again.');
         }
     };
+
+    if (postLoading || countryLoading) {
+        return (
+            <Box display="flex" justifyContent="center" my={4}>
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
         <Container>
@@ -42,9 +52,9 @@ const CreateBlogPost = () => {
                 Share Your Travel Story
             </Typography>
 
-            {error && (
+            {(error || postError || countryError) && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
+                    {error || postError || countryError}
                 </Alert>
             )}
 

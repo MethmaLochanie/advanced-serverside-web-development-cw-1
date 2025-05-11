@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { authService } from '../api/auth';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -20,10 +19,8 @@ export const AuthProvider = ({ children }) => {
 
   const validateToken = async () => {
     try {
-      const response = await axios.get(`${API_URL}/auth/validate`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data.user);
+      const { user: userData } = await authService.validateToken(token);
+      setUser(userData);
       setLoading(false);
     } catch (error) {
       logout();
@@ -33,11 +30,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email,
-        password
-      });
-      const { token: newToken, user: userData } = response.data;
+      const { token: newToken, user: userData } = await authService.login(email, password);
       setToken(newToken);
       setUser(userData);
       localStorage.setItem('token', newToken);
@@ -56,12 +49,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
-        username,
-        email,
-        password
-      });
-      return { success: true, data: response.data };
+      const data = await authService.register(username, email, password);
+      return { success: true, data };
     } catch (error) {
       const errData = error.response?.data;
       if (errData?.errors) {

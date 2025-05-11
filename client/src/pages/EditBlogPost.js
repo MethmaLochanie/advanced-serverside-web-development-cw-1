@@ -1,103 +1,108 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Alert } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
-import { blogPostService } from '../api/blogPosts';
-import BlogPostForm from '../components/BlogPostForm';
-import { fetchCountriesByName } from '../api/countries';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  Alert,
+  CircularProgress,
+  Box,
+} from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import BlogPostForm from "../components/BlogPostForm";
+import { useAuth } from "../context/AuthContext";
+import { useBlogPosts } from "../hooks/useBlogPosts";
+import { useCountries } from "../hooks/useCountries";
 
 const EditBlogPost = () => {
-    const [post, setPost] = useState(null);
-    const [error, setError] = useState(null);
-    const [loadError, setLoadError] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const { user } = useAuth();
+  const [post, setPost] = useState(null);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { user } = useAuth();
+  const { 
+    getPost, 
+    updatePost, 
+    loading: postLoading, 
+    error: postError 
+  } = useBlogPosts();
+  const { 
+    searchCountries, 
+    loading: countryLoading, 
+    error: countryError 
+  } = useCountries();
 
-    useEffect(() => {
-        fetchPost();
-    }, [id]);
+  useEffect(() => {
+    fetchPost();
+  }, [id]);
 
-    const fetchPost = async () => {
-        try {
-            const data = await blogPostService.getPost(id);
-            setPost(data);
-            setLoading(false);
-        } catch (err) {
-            setLoadError('Failed to fetch blog post');
-            setLoading(false);
-        }
-    };
-
-    const handleSubmit = async (formData) => {
-        setError(null);
-        try {
-            // Validate country
-            const apiKey = user?.apiKeys && user.apiKeys[0];
-            if (!apiKey) {
-                setError('No API key found for country validation.');
-                return;
-            }
-            const countries = await fetchCountriesByName(apiKey, formData.country_name);
-            if (!countries || countries.length === 0) {
-                setError('Invalid country name. Please enter a valid country.');
-                return;
-            }
-            await blogPostService.updatePost(id, formData);
-            navigate('/posts');
-        } catch (err) {
-            if (err.response && err.response.status === 404) {
-                setError('Invalid country name. Please enter a valid country.');
-            } else {
-                setError('Failed to update blog post. Please try again.');
-            }
-        }
-    };
-
-    if (loading) {
-        return (
-            <Container>
-                <Typography>Loading...</Typography>
-            </Container>
-        );
+  const fetchPost = async () => {
+    try {
+      const data = await getPost(id);
+      setPost(data);
+    } catch (err) {
+      console.error('Error fetching post:', err);
     }
+  };
 
-    if (loadError) {
-        return (
-            <Container>
-                <Alert severity="error">{loadError}</Alert>
-            </Container>
-        );
+  const handleSubmit = async (formData) => {
+    setError(null);
+    try {
+      // Validate country
+      const countries = await searchCountries(formData.country_name);
+      if (!countries || countries.length === 0) {
+        setError("Invalid country name. Please enter a valid country.");
+        return;
+      }
+      await updatePost(id, formData);
+      navigate("/posts");
+    } catch (err) {
+      console.error('Error updating post:', err);
+      setError("Failed to update blog post. Please try again.");
     }
+  };
 
-    if (!post) {
-        return (
-            <Container>
-                <Alert severity="error">Blog post not found</Alert>
-            </Container>
-        );
-    }
-
+  if (postLoading || countryLoading) {
     return (
-        <Container>
-            <Typography variant="h4" component="h1" gutterBottom>
-                Edit Your Travel Story
-            </Typography>
-
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                </Alert>
-            )}
-
-            <BlogPostForm
-                initialData={post}
-                onSubmit={handleSubmit}
-                isEditing={true}
-            />
-        </Container>
+      <Box display="flex" justifyContent="center" my={4}>
+        <CircularProgress />
+      </Box>
     );
+  }
+
+  if (postError) {
+    return (
+      <Container>
+        <Alert severity="error">{postError}</Alert>
+      </Container>
+    );
+  }
+
+  if (!post) {
+    return (
+      <Container>
+        <Alert severity="error">Blog post not found</Alert>
+      </Container>
+    );
+  }
+
+  return (
+    <Container>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Edit Your Travel Story
+      </Typography>
+
+      {(error || countryError) && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error || countryError}
+        </Alert>
+      )}
+
+      <BlogPostForm
+        initialData={post}
+        onSubmit={handleSubmit}
+        isEditing={true}
+      />
+    </Container>
+  );
 };
 
-export default EditBlogPost; 
+export default EditBlogPost;
