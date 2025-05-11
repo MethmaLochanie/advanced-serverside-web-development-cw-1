@@ -2,43 +2,32 @@ import React, { useState } from 'react';
 import { Container, Typography, Alert, CircularProgress, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import BlogPostForm from '../components/BlogPostForm';
-import { useAuth } from '../context/AuthContext';
 import { useBlogPosts } from '../hooks/useBlogPosts';
-import { useCountries } from '../hooks/useCountries';
 
 const CreateBlogPost = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const { user } = useAuth();
     const { 
         createPost,
         loading: postLoading,
         error: postError 
     } = useBlogPosts();
-    const { 
-        searchCountries, 
-        loading: countryLoading, 
-        error: countryError 
-    } = useCountries();
 
     const handleSubmit = async (formData) => {
         setError(null);
         try {
-            // Validate country
-            const countries = await searchCountries(formData.country_name);
-            if (!countries || countries.length === 0) {
-                setError('Invalid country name. Please enter a valid country.');
-                return;
+            const response = await createPost(formData);
+            if (response.success) {
+                navigate('/posts');
+            } else {
+                setError(response.error || 'Failed to create blog post');
             }
-            await createPost(formData);
-            navigate('/posts');
         } catch (err) {
-            console.error('Error creating blog post:', err);
-            setError('Failed to create blog post. Please try again.');
+            setError(err.response?.data?.message || 'Failed to create blog post. Please try again.');
         }
     };
 
-    if (postLoading || countryLoading) {
+    if (postLoading) {
         return (
             <Box display="flex" justifyContent="center" my={4}>
                 <CircularProgress />
@@ -52,9 +41,9 @@ const CreateBlogPost = () => {
                 Share Your Travel Story
             </Typography>
 
-            {(error || postError || countryError) && (
+            {(error || postError) && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                    {error || postError || countryError}
+                    {error || postError}
                 </Alert>
             )}
 

@@ -8,27 +8,19 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import BlogPostForm from "../components/BlogPostForm";
-import { useAuth } from "../context/AuthContext";
 import { useBlogPosts } from "../hooks/useBlogPosts";
-import { useCountries } from "../hooks/useCountries";
 
 const EditBlogPost = () => {
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const { 
     getPost, 
     updatePost, 
     loading: postLoading, 
     error: postError 
   } = useBlogPosts();
-  const { 
-    searchCountries, 
-    loading: countryLoading, 
-    error: countryError 
-  } = useCountries();
 
   useEffect(() => {
     fetchPost();
@@ -36,31 +28,32 @@ const EditBlogPost = () => {
 
   const fetchPost = async () => {
     try {
-      const data = await getPost(id);
-      setPost(data);
+      const response = await getPost(id);
+      if (response.success) {
+        setPost(response.data);
+      } else {
+        setError(response.error || 'Failed to fetch post');
+      }
     } catch (err) {
-      console.error('Error fetching post:', err);
+      setError(err.response?.data?.message || 'Failed to fetch post');
     }
   };
 
   const handleSubmit = async (formData) => {
     setError(null);
     try {
-      // Validate country
-      const countries = await searchCountries(formData.country_name);
-      if (!countries || countries.length === 0) {
-        setError("Invalid country name. Please enter a valid country.");
-        return;
+      const response = await updatePost(id, formData);
+      if (response.success) {
+        navigate('/posts');
+      } else {
+        setError(response.error || 'Failed to update blog post');
       }
-      await updatePost(id, formData);
-      navigate("/posts");
     } catch (err) {
-      console.error('Error updating post:', err);
-      setError("Failed to update blog post. Please try again.");
+      setError(err.response?.data?.message || 'Failed to update blog post. Please try again.');
     }
   };
 
-  if (postLoading || countryLoading) {
+  if (postLoading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
         <CircularProgress />
@@ -68,18 +61,12 @@ const EditBlogPost = () => {
     );
   }
 
-  if (postError) {
-    return (
-      <Container>
-        <Alert severity="error">{postError}</Alert>
-      </Container>
-    );
-  }
-
   if (!post) {
     return (
       <Container>
-        <Alert severity="error">Blog post not found</Alert>
+        <Alert severity="error">
+          Post not found or you don't have permission to edit it.
+        </Alert>
       </Container>
     );
   }
@@ -90,15 +77,15 @@ const EditBlogPost = () => {
         Edit Your Travel Story
       </Typography>
 
-      {(error || countryError) && (
+      {(error || postError) && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error || countryError}
+          {error || postError}
         </Alert>
       )}
 
       <BlogPostForm
-        initialData={post}
         onSubmit={handleSubmit}
+        initialData={post}
         isEditing={true}
       />
     </Container>

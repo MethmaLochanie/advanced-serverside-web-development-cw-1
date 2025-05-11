@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import { followUser, unfollowUser } from '../api/followApi';
 import { useAuth } from '../context/AuthContext';

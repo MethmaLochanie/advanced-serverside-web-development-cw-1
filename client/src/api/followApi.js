@@ -1,11 +1,5 @@
 import api from './api';
 
-// Get auth token from localStorage
-const getAuthToken = () => {
-    const token = localStorage.getItem('token');
-    return token ? `Bearer ${token}` : '';
-};
-
 // Follow a user
 export const followUser = async (followingId) => {
     const response = await api.post('/follow/follow', {

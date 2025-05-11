@@ -73,14 +73,35 @@ const getFollowedUsersPosts = async (userId, page = 1, limit = 10) => {
         throw new Error('User Not Found');
     }
 
-    const result = await Follow.getFollowedUsersPosts(userId, page, limit);
+    const offset = (page - 1) * limit;
+    const posts = await Follow.getFollowedUsersPosts(userId, limit, offset);
+    const total = await Follow.getFollowedPostsCount(userId);
+
+    if (!posts.length) {
+        return {
+            posts: [],
+            total,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(total / limit),
+                totalItems: total,
+                itemsPerPage: parseInt(limit)
+            }
+        };
+    }
+
+    // Enrich posts with country details
+    const enrichedPosts = await Promise.all(
+        posts.map(post => enrichPostWithCountryDetails(post))
+    );
+
     return {
-        posts: result.posts,
-        total: result.total,
+        posts: enrichedPosts,
+        total,
         pagination: {
             currentPage: parseInt(page),
-            totalPages: Math.ceil(result.total / parseInt(limit)),
-            totalItems: result.total,
+            totalPages: Math.ceil(total / limit),
+            totalItems: total,
             itemsPerPage: parseInt(limit)
         }
     };

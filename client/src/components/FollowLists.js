@@ -45,7 +45,7 @@ const FollowLists = ({ userId, followers, following, loading, refreshLists }) =>
             );
         }
 
-        // Get a set of user IDs you are following
+        // Get a set of user IDs user is following
         const followingIds = new Set(following.map(u => u.id));
 
         return (
@@ -108,8 +108,8 @@ const FollowLists = ({ userId, followers, following, loading, refreshLists }) =>
                 <Tab label={`Following (${following.length})`} />
             </Tabs>
             {value === 0
-                ? renderList(followers, false) // Followers tab
-                : renderList(following, true)  // Following tab
+                ? renderList(followers, false)
+                : renderList(following, true)
             }
         </Box>
     );

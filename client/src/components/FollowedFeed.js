@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -10,21 +10,25 @@ import {
     CircularProgress,
     Pagination,
     Divider,
-    Link
+    Link,
+    Alert,
+    Snackbar,
+    IconButton
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useFollow } from '../hooks/useFollow';
-import { useCountries } from '../hooks/useCountries';
 import { useAuth } from '../context/AuthContext';
 
 const FollowedFeed = () => {
     const [posts, setPosts] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [countryData, setCountryData] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { getFollowedFeed, loading: followLoading, error: followError } = useFollow();
-    const { searchCountries, loading: countryLoading, error: countryError } = useCountries();
+    const { getFollowedFeed } = useFollow();
 
     const handleUserClick = (userId) => {
         navigate(`/profile/${userId}`);
@@ -32,31 +36,27 @@ const FollowedFeed = () => {
 
     const fetchPosts = async () => {
         if (!user) return;
-        try {
-            const data = await getFollowedFeed(user.id, page);
-            setPosts(data.posts);
-            setTotalPages(data.pagination.totalPages);
-            await fetchCountryInfo(data.posts);
-        } catch (error) {
-            console.error('Error fetching followed posts:', error);
-        }
-    };
-
-    const fetchCountryInfo = async (postsData) => {
-        const uniqueCountries = [...new Set(postsData.map(post => post.country_name))];
-        const countryInfoMap = {};
         
-        for (const country of uniqueCountries) {
-            try {
-                const countryArr = await searchCountries(country);
-                if (countryArr && countryArr.length > 0) {
-                    countryInfoMap[country] = countryArr[0];
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const response = await getFollowedFeed(user.id, page);
+            
+            if (response.success) {
+                setPosts(response.data.posts);
+                setTotalPages(response.data.pagination.totalPages);
+                if (response.data.posts.length === 0) {
+                    setSuccessMessage('No posts found from users you follow');
                 }
-            } catch (e) {
-                console.log(e);
+            } else {
+                setError(response.error || 'Failed to fetch posts');
             }
+        } catch (error) {
+            setError(error.response?.data?.message || 'An error occurred while fetching posts');
+        } finally {
+            setLoading(false);
         }
-        setCountryData(countryInfoMap);
     };
 
     useEffect(() => {
@@ -67,32 +67,75 @@ const FollowedFeed = () => {
         setPage(value);
     };
 
+    const handleCloseSnackbar = () => {
+        setError(null);
+        setSuccessMessage(null);
+    };
+
     if (!user) {
         return (
-            <Typography align="center" color="textSecondary">
+            <Alert severity="info" sx={{ mt: 2 }}>
                 Please log in to view your feed
-            </Typography>
+            </Alert>
         );
     }
 
-    if (followLoading || countryLoading) {
+    if (loading) {
         return (
-            <Box display="flex" justifyContent="center" my={4}>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress />
             </Box>
         );
     }
 
-    if (followError) {
-        return (
-            <Typography color="error" align="center">
-                {followError}
-            </Typography>
-        );
-    }
-
     return (
         <Box>
+            <Snackbar
+                open={!!error}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    severity="error" 
+                    action={
+                        <IconButton
+                            size="small"
+                            aria-label="close"
+                            color="inherit"
+                            onClick={handleCloseSnackbar}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    }
+                >
+                    {error}
+                </Alert>
+            </Snackbar>
+
+            <Snackbar
+                open={!!successMessage}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    severity="info" 
+                    action={
+                        <IconButton
+                            size="small"
+                            aria-label="close"
+                            color="inherit"
+                            onClick={handleCloseSnackbar}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    }
+                >
+                    {successMessage}
+                </Alert>
+            </Snackbar>
+
             {posts.map((post) => (
                 <Card key={post.id} sx={{ mb: 2 }}>
                     <CardHeader
@@ -104,6 +147,7 @@ const FollowedFeed = () => {
                                 component="button"
                                 variant="body2"
                                 onClick={() => handleUserClick(post.user_id)}
+                                sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                             >
                                 {post.username}
                             </Link>
@@ -112,23 +156,29 @@ const FollowedFeed = () => {
                     />
                     <Divider />
                     <CardContent>
-                        {/* Country Insights */}
-                        {countryData[post.country_name] && (
+                        {post.country && (
                             <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                {countryData[post.country_name].flag?.png && (
+                                {post.country.flag && (
                                     <img 
-                                        src={countryData[post.country_name].flag.png} 
-                                        alt={countryData[post.country_name].flag.alt || 'Flag'} 
+                                        src={post.country.flag} 
+                                        alt={post.country.name} 
                                         style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} 
                                     />
                                 )}
                                 <Box>
                                     <Typography variant="body2">
-                                        <strong>Capital:</strong> {countryData[post.country_name].capital}
+                                        <strong>Country:</strong> {post.country.name}
                                     </Typography>
-                                    <Typography variant="body2">
-                                        <strong>Currency:</strong> {countryData[post.country_name].currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}
-                                    </Typography>
+                                    {post.country.capital && (
+                                        <Typography variant="body2">
+                                            <strong>Capital:</strong> {post.country.capital}
+                                        </Typography>
+                                    )}
+                                    {post.country.currencies && post.country.currencies.length > 0 && (
+                                        <Typography variant="body2">
+                                            <strong>Currency:</strong> {post.country.currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}
+                                        </Typography>
+                                    )}
                                 </Box>
                             </Box>
                         )}
@@ -139,9 +189,6 @@ const FollowedFeed = () => {
                             {post.content}
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
-                            Country: {post.country_name}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
                             Visit Date: {new Date(post.date_of_visit).toLocaleDateString()}
                         </Typography>
                     </CardContent>
@@ -149,12 +196,13 @@ const FollowedFeed = () => {
             ))}
 
             {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
                     <Pagination
                         count={totalPages}
                         page={page}
                         onChange={handlePageChange}
                         color="primary"
+                        size="large"
                     />
                 </Box>
             )}

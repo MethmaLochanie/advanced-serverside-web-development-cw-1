@@ -101,32 +101,6 @@ const login = async (req, res) => {
   }
 };
 
-const validateToken = async (req, res) => {
-  try {
-    const user = await authService.validateToken(req.user.id);
-    
-    res.json({
-      success: true,
-      message: 'Session validated successfully',
-      data: { user }
-    });
-  } catch (error) {
-    console.error('Token validation error:', error);
-    if (error.message === 'User Not Found') {
-      return res.status(404).json({
-        success: false,
-        error: 'User Not Found',
-        message: 'The user associated with this token no longer exists'
-      });
-    }
-    res.status(500).json({
-      success: false,
-      error: 'Token Validation Failed',
-      message: 'An error occurred while validating your session'
-    });
-  }
-};
-
 module.exports = {
   register,
   login,

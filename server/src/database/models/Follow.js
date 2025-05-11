@@ -135,6 +135,43 @@ class Follow {
             });
         });
     }
+
+    static async getFollowedUsersPosts(userId, limit, offset) {
+        return new Promise((resolve, reject) => {
+            db.all(`
+                SELECT bp.*, u.username 
+                FROM blog_posts bp
+                JOIN users u ON bp.user_id = u.id
+                WHERE bp.user_id IN (
+                    SELECT following_id 
+                    FROM followers 
+                    WHERE follower_id = ?
+                )
+                ORDER BY bp.created_at DESC
+                LIMIT ? OFFSET ?
+            `, [userId, limit, offset], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+    }
+
+    static async getFollowedPostsCount(userId) {
+        return new Promise((resolve, reject) => {
+            db.get(`
+                SELECT COUNT(*) as count
+                FROM blog_posts bp
+                WHERE bp.user_id IN (
+                    SELECT following_id 
+                    FROM followers 
+                    WHERE follower_id = ?
+                )
+            `, [userId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.count : 0);
+            });
+        });
+    }
 }
 
 module.exports = Follow; 

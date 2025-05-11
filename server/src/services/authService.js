@@ -52,17 +52,6 @@ const login = async ({ email, password }) => {
     };
 };
 
-// Validate user token
-const validateToken = async (userId) => {
-    const user = await User.getPublicProfile(userId);
-    
-    if (!user) {
-        throw new Error('User Not Found');
-    }
-
-    return user;
-};
-
 module.exports = {
     register,
     login,

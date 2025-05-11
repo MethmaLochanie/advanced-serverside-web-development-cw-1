@@ -8,17 +8,20 @@ import {
   TextField,
   Pagination,
   Grid,
+  Alert,
+  Snackbar,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import BlogPostCard from "../components/BlogPostCard";
 import { useAuth } from "../context/AuthContext";
 import { useBlogPosts } from "../hooks/useBlogPosts";
-import { useCountries } from "../hooks/useCountries";
+import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 
 const BlogPosts = () => {
   const [posts, setPosts] = useState([]);
-  const [countryData, setCountryData] = useState({});
-  const [searchType, setSearchType] = useState("all");
+  const [searchType, setSearchType] = useState("country");
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -26,7 +29,9 @@ const BlogPosts = () => {
     totalItems: 0,
     itemsPerPage: 10,
   });
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const { user } = useAuth();
   const { 
     getAllPosts, 
@@ -36,73 +41,62 @@ const BlogPosts = () => {
     loading: postsLoading,
     error: postsError 
   } = useBlogPosts();
-  const { 
-    searchCountries,
-    loading: countryLoading,
-    error: countryError 
-  } = useCountries();
 
-  useEffect(() => {
-    if (searchType === "all") {
-      fetchPostsAndCountries();
-    }
-  }, [searchType]);
-
-  const fetchPostsAndCountries = async () => {
-    try {
-      const data = await getAllPosts();
-      setPosts(data);
-      await fetchCountryInfo(data);
-    } catch (err) {
-      console.error("Error fetching posts:", err);
-    }
-  };
-
-  const fetchCountryInfo = async (postsData) => {
-    const uniqueCountries = [
-      ...new Set(postsData.map((post) => post.country_name)),
-    ];
-    const countryInfoMap = {};
+  const fetchPosts = async () => {
+    setLoading(true);
+    setError(null);
     
-    for (const country of uniqueCountries) {
-      try {
-        const countryArr = await searchCountries(country);
-        if (countryArr && countryArr.length > 0) {
-          countryInfoMap[country] = countryArr[0];
+    try {
+      const response = await getAllPosts();
+      
+      if (response.success) {
+        setPosts(response.data.posts);
+        setPagination(response.data.pagination);
+        if (response.data.posts.length === 0) {
+          setSuccessMessage('No blog posts found');
         }
-      } catch (e) {
-        console.log(e);
+      } else {
+        setError(response.error || 'Failed to fetch posts');
       }
+    } catch (error) {
+      setError(error.response?.data?.message || 'An error occurred while fetching posts');
+    } finally {
+      setLoading(false);
     }
-    setCountryData(countryInfoMap);
-  };
+  }; 
 
-  const handleSearch = async (page = 1) => {
+  const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      setSearchType("all");
+      fetchPosts();
       return;
     }
 
+    setLoading(true);
+    setError(null);
+    
     try {
-      let response;
-      if (searchType === "country") {
-        response = await searchByCountry(searchQuery, page);
-      } else if (searchType === "username") {
-        response = await searchByUsername(searchQuery, page);
+      const response = searchType === 'country' 
+        ? await searchByCountry(searchQuery, pagination.currentPage)
+        : await searchByUsername(searchQuery, pagination.currentPage);
+      
+      if (response.success) {
+        setPosts(response.data.posts);
+        setPagination(response.data.pagination);
+        if (response.data.posts.length === 0) {
+          setSuccessMessage(`No posts found for ${searchType === 'country' ? 'country' : 'username'}: ${searchQuery}`);
+        }
+      } else {
+        setError(response.error || 'Failed to search posts');
       }
-
-      if (response) {
-        setPosts(response.posts);
-        setPagination(response.pagination);
-        await fetchCountryInfo(response.posts);
-      }
-    } catch (err) {
-      console.error("Error searching posts:", err);
+    } catch (error) {
+      setError(error.response?.data?.message || 'An error occurred while searching posts');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePageChange = (event, value) => {
-    handleSearch(value);
+    setPagination({ ...pagination, currentPage: value });
   };
 
   const handleSearchTypeChange = (type) => {
@@ -121,45 +115,84 @@ const BlogPosts = () => {
       try {
         await deletePost(postId);
         setPosts(posts.filter((post) => post.id !== postId));
+        setSuccessMessage('Post deleted successfully');
       } catch (err) {
-        console.error("Error deleting post:", err);
+        setError(err.response?.data?.message || 'Failed to delete post');
       }
     }
   };
 
-  if (postsLoading || countryLoading) {
+  const handleCloseSnackbar = () => {
+    setError(null);
+    setSuccessMessage(null);
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, [pagination.currentPage]);
+
+  if (loading) {
     return (
-      <Box display="flex" justifyContent="center" my={4}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
   }
 
-  if (postsError) {
-    return (
-      <Typography color="error" align="center">
-        {postsError}
-      </Typography>
-    );
-  }
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          severity="error" 
+          action={
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={handleCloseSnackbar}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          }
+        >
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          severity="info" 
+          action={
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={handleCloseSnackbar}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          }
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Travel Stories
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={12} sm={6} md={4}>
-            <Button
-              variant={searchType === "all" ? "contained" : "outlined"}
-              onClick={() => handleSearchTypeChange("all")}
-              fullWidth
-            >
-              All Posts
-            </Button>
-          </Grid>
           <Grid xs={12} sm={6} md={4}>
             <Button
               variant={searchType === "country" ? "contained" : "outlined"}
@@ -188,14 +221,16 @@ const BlogPosts = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={handleSearch}>
+                      <SearchIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
-            <Button
-              variant="contained"
-              onClick={() => handleSearch()}
-              sx={{ minWidth: 100 }}
-            >
-              Search
-            </Button>
           </Box>
         )}
 
@@ -209,7 +244,6 @@ const BlogPosts = () => {
                 post={post}
                 onDelete={handleDelete}
                 isOwner={user && user.id === post.user_id}
-                countryInfo={countryData[post.country_name]}
               />
             ))}
             
@@ -220,6 +254,7 @@ const BlogPosts = () => {
                   page={pagination.currentPage}
                   onChange={handlePageChange}
                   color="primary"
+                  size="large"
                 />
               </Box>
             )}
