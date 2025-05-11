@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { logRequest, logError } = require('./middleware/logger');
+// const { logRequest, logError } = require('./middleware/logger');
 const errorHandler = require('./middleware/error');
 const { sanitizeRequest } = require('./middleware/sanitizer');
 
@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(sanitizeRequest);
 
 // Request logging
-app.use(logRequest);
+// app.use(logRequest);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -33,7 +33,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/follow', followRoutes);
 
 // Error handling
-app.use(logError);
+// app.use(logError);
 app.use(errorHandler);
 
 module.exports = app; 

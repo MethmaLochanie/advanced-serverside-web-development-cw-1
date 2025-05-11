@@ -131,11 +131,9 @@ const initializeDatabase = () => {
         await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key     ON api_usage(api_key_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_blog_posts_user   ON blog_posts(user_id)');
         console.log('Indexes created');
-
-        console.log('✅ Database initialization completed');
         resolve();
       } catch (err) {
-        console.error('❌ Error during database initialization:', err);
+        console.error('Error during database initialization:', err);
         reject(err);
       }
     });

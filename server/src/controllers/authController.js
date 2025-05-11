@@ -4,6 +4,29 @@ const register = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing Required Fields',
+        message: 'Username, email, and password are required'
+      });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Email',
+        message: 'Please provide a valid email address'
+      });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: 'Weak Password',
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
     const userData = await authService.register({ username, email, password });
 
     res.status(201).json({
@@ -39,6 +62,14 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing Required Fields',
+        message: 'Email and password are required'
+      });
+    }
+
     const result = await authService.login({ email, password });
 
     res.json({
@@ -70,7 +101,34 @@ const login = async (req, res) => {
   }
 };
 
+const validateToken = async (req, res) => {
+  try {
+    const user = await authService.validateToken(req.user.id);
+    
+    res.json({
+      success: true,
+      message: 'Session validated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Token validation error:', error);
+    if (error.message === 'User Not Found') {
+      return res.status(404).json({
+        success: false,
+        error: 'User Not Found',
+        message: 'The user associated with this token no longer exists'
+      });
+    }
+    res.status(500).json({
+      success: false,
+      error: 'Token Validation Failed',
+      message: 'An error occurred while validating your session'
+    });
+  }
+};
+
 module.exports = {
   register,
-  login
+  login,
+  validateToken
 }; 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const blogPostController = require('../controllers/blogPostController');
 const { verifyToken } = require('../middleware/auth');
-const { validations, validate } = require('../middleware/validation');
+const { validations, validate } = require('../middleware/validator');
 
 // Public routes
 router.get('/', validate(validations.pagination), blogPostController.getFeed);
