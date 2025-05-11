@@ -1,45 +1,51 @@
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const authRoutes = require('./routes/auth');
-const countryRoutes = require('./routes/countries');
-const apiKeyRoutes = require('./routes/apiKeys');
-const adminRoutes = require('./routes/admin');
-const blogPostRoutes = require('./routes/blogPostRoutes');
-const followRoutes = require('./routes/followRoutes');
-const userRoutes = require('./routes/userRoutes');
+const app = require('./app');
+const config = require('./config/config');
 const { initializeDatabase } = require('./database/init');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Security middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/countries', countryRoutes);
-app.use('/api/keys', apiKeyRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/posts', blogPostRoutes);
-app.use('/api/follow', followRoutes);
-app.use('/api/users', userRoutes);
-
-// Initialize database
-initializeDatabase();
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+// Global error handler
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
+// Initialize database and start server
+const startServer = async () => {
+    try {
+        console.log('Starting server initialization...');
+        await initializeDatabase();
+        console.log('Database initialized successfully');
+
+        const server = app.listen(config.port, () => {
+            console.log(`Server is running on port ${config.port}`);
+        });
+
+        // Handle server errors
+        server.on('error', (error) => {
+            console.error('Server error:', error);
+            process.exit(1);
+        });
+
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+console.log('Starting server...');
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received. Shutting down gracefully...');
+    process.exit(0);
 }); 

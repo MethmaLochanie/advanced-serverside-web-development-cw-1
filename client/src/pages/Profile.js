@@ -1,59 +1,41 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import {
-    Container,
-    Box,
-    Typography,
-    Paper,
-    Avatar,
-    Grid,
-    Divider,
-    CircularProgress,
-    List,
-    ListItem,
-    ListItemAvatar,
-    ListItemText,
-    Link,
-    Button
-} from '@mui/material';
-import FollowButton from '../components/FollowButton';
-import FollowLists from '../components/FollowLists';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { getFollowers, getFollowing } from '../api/followApi';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { useFollow } from '../hooks/useFollow';
+import { useUsers } from '../hooks/useUsers';
+import UserProfile from '../components/UserProfile';
+import FollowLists from '../components/FollowLists';
 
 const Profile = () => {
-    const { userId } = useParams();
-    const { user: currentUser } = useAuth();
     const [profileUser, setProfileUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [suggestedUsers, setSuggestedUsers] = useState([]);
-    const [showSuggestedUsers, setShowSuggestedUsers] = useState(false);
     const [followers, setFollowers] = useState([]);
     const [following, setFollowing] = useState([]);
+    const [suggestedUsers, setSuggestedUsers] = useState([]);
+    const [showSuggestedUsers, setShowSuggestedUsers] = useState(false);
     const [listsLoading, setListsLoading] = useState(false);
+    const { userId } = useParams();
+    const { user } = useAuth();
+    const { getFollowers, getFollowing } = useFollow();
+    const { 
+        getUserProfile, 
+        getSuggestedUsers: getSuggestedUsersFromHook, 
+        loading: profileLoading, 
+        error: profileError 
+    } = useUsers();
 
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`${API_URL}/users/${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-                setProfileUser(response.data);
+                const data = await getUserProfile(userId);
+                setProfileUser(data);
             } catch (error) {
                 console.error('Error fetching user profile:', error);
-            } finally {
-                setLoading(false);
             }
         };
 
         fetchUserProfile();
-    }, [userId]);
+    }, [userId, getUserProfile]);
 
     const refreshLists = useCallback(async () => {
         setListsLoading(true);
@@ -67,7 +49,7 @@ const Profile = () => {
         } finally {
             setListsLoading(false);
         }
-    }, [userId]);
+    }, [userId, getFollowers, getFollowing]);
 
     useEffect(() => {
         refreshLists();
@@ -75,142 +57,93 @@ const Profile = () => {
 
     const fetchSuggestedUsers = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/users/suggested`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            setSuggestedUsers(response.data.users);
+            const data = await getSuggestedUsersFromHook();
+            setSuggestedUsers(data.users);
             setShowSuggestedUsers(true);
         } catch (error) {
             console.error('Error fetching suggested users:', error);
         }
     };
 
-    if (loading) {
+    if (profileLoading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <Box display="flex" justifyContent="center" my={4}>
                 <CircularProgress />
             </Box>
+        );
+    }
+
+    if (profileError) {
+        return (
+            <Container>
+                <Alert severity="error">{profileError}</Alert>
+            </Container>
         );
     }
 
     if (!profileUser) {
         return (
             <Container>
-                <Typography variant="h5" color="error" align="center">
-                    User not found
-                </Typography>
+                <Alert severity="error">User not found</Alert>
             </Container>
         );
     }
 
     return (
-        <Container maxWidth="md">
-            <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
-                <Box display="flex" alignItems="center" mb={3}>
-                    <Avatar sx={{ width: 100, height: 100, mr: 3 }}>
-                        {profileUser.username[0].toUpperCase()}
-                    </Avatar>
-                    <Box flex={1}>
-                        <Typography variant="h4" gutterBottom>
-                            {profileUser.username}
-                        </Typography>
-                        <Typography variant="body1" color="textSecondary">
-                            {profileUser.email}
-                        </Typography>
-                    </Box>
-                    {currentUser && currentUser.id !== profileUser.id && (
-                        <FollowButton
-                            targetUserId={profileUser.id}
-                            initialIsFollowing={!!following.find(u => u.id === profileUser.id)}
-                            onFollowChange={refreshLists}
-                        />
-                    )}
+        <Container>
+            <UserProfile 
+                profileUser={profileUser} 
+                currentUser={user}
+                onRefreshLists={refreshLists}
+            />
+            
+            <Box sx={{ mt: 4 }}>
+                <Typography variant="h5" gutterBottom>
+                    Followers
+                </Typography>
+                <FollowLists 
+                    users={followers} 
+                    loading={listsLoading}
+                    onRefresh={refreshLists}
+                />
+            </Box>
+
+            <Box sx={{ mt: 4 }}>
+                <Typography variant="h5" gutterBottom>
+                    Following
+                </Typography>
+                <FollowLists 
+                    users={following} 
+                    loading={listsLoading}
+                    onRefresh={refreshLists}
+                />
+            </Box>
+
+            {!showSuggestedUsers && (
+                <Box sx={{ mt: 4, textAlign: 'center' }}>
+                    <Typography 
+                        variant="body1" 
+                        color="primary" 
+                        sx={{ cursor: 'pointer' }}
+                        onClick={fetchSuggestedUsers}
+                    >
+                        Find people to follow
+                    </Typography>
                 </Box>
-                <Divider sx={{ mb: 3 }} />
-                <Box display="flex" flexDirection="column" alignItems="center">
-                    <Box sx={{ width: '100%', maxWidth: 600 }}>
-                        <FollowLists
-                            userId={profileUser.id}
-                            followers={followers}
-                            following={following}
-                            loading={listsLoading}
-                            refreshLists={refreshLists}
-                        />
-                    </Box>
-                    {currentUser && currentUser.id === profileUser.id && (
-                        <Box
-                            sx={{
-                                background: "#fafafa",
-                                borderRadius: 2,
-                                p: 3,
-                                boxShadow: 1,
-                                width: '100%',
-                                maxWidth: 600,
-                                mt: 3,
-                                textAlign: 'center'
-                            }}
-                        >
-                            <Typography variant="h6" gutterBottom>
-                                Discover Users
-                            </Typography>
-                            {!showSuggestedUsers ? (
-                                <Button
-                                    variant="outlined"
-                                    onClick={fetchSuggestedUsers}
-                                    sx={{ mb: 2, mx: 'auto' }}
-                                >
-                                    Show Suggested Users
-                                </Button>
-                            ) : (
-                                <List sx={{ textAlign: 'left' }}>
-                                    {suggestedUsers.length === 0 && (
-                                        <Typography color="textSecondary" align="center">
-                                            No users to suggest.
-                                        </Typography>
-                                    )}
-                                    {suggestedUsers.map((user) => (
-                                        <ListItem
-                                            key={user.id}
-                                            secondaryAction={
-                                                <FollowButton
-                                                    targetUserId={user.id}
-                                                    initialIsFollowing={false}
-                                                    onFollowChange={refreshLists}
-                                                />
-                                            }
-                                            sx={{ px: 0 }}
-                                        >
-                                            <ListItemAvatar>
-                                                <Avatar>
-                                                    {user.username[0].toUpperCase()}
-                                                </Avatar>
-                                            </ListItemAvatar>
-                                            <ListItemText
-                                                primary={
-                                                    <Link
-                                                        component="span"
-                                                        sx={{
-                                                            cursor: "pointer",
-                                                            "&:hover": { textDecoration: "underline" },
-                                                        }}
-                                                        onClick={() => window.location.href = `/profile/${user.id}`}
-                                                    >
-                                                        {user.username}
-                                                    </Link>
-                                                }
-                                                secondary={user.email}
-                                            />
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            )}
-                        </Box>
-                    )}
+            )}
+
+            {showSuggestedUsers && (
+                <Box sx={{ mt: 4 }}>
+                    <Typography variant="h5" gutterBottom>
+                        Suggested Users
+                    </Typography>
+                    <FollowLists 
+                        users={suggestedUsers} 
+                        loading={listsLoading}
+                        onRefresh={refreshLists}
+                    />
                 </Box>
-            </Paper>
+            )}
         </Container>
     );
 };

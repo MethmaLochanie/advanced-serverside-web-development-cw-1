@@ -14,7 +14,7 @@ const config = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
   },
   database: {
-    path: process.env.DB_PATH || './src/database/database.sqlite'
+    path: process.env.DB_PATH || 'database.sqlite'
   }
 };
 

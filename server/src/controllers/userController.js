@@ -1,88 +1,143 @@
-const { db } = require('../database/init');
+const userService = require('../services/userService');
 
-// Get user profile
-const getUserProfile = async (req, res) => {
+const getProfile = async (req, res) => {
     const { userId } = req.params;
 
     try {
-        // Get user data
-        const user = await new Promise((resolve, reject) => {
-            db.get(`
-                SELECT id, username, email, role, created_at
-                FROM users
-                WHERE id = ? AND is_active = 1
-            `, [userId], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
-        });
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Get follower and following counts
-        const [followerCount, followingCount] = await Promise.all([
-            new Promise((resolve, reject) => {
-                db.get('SELECT COUNT(*) as count FROM followers WHERE following_id = ?', 
-                    [userId], (err, row) => {
-                        if (err) reject(err);
-                        resolve(row.count);
-                    });
-            }),
-            new Promise((resolve, reject) => {
-                db.get('SELECT COUNT(*) as count FROM followers WHERE follower_id = ?', 
-                    [userId], (err, row) => {
-                        if (err) reject(err);
-                        resolve(row.count);
-                    });
-            })
-        ]);
-
+        const userData = await userService.getProfile(userId);
         res.json({
-            ...user,
-            followerCount,
-            followingCount
+            success: true,
+            message: `Retrieved profile for ${userData.username}`,
+            data: userData
         });
     } catch (error) {
         console.error('Error getting user profile:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        if (error.message === 'User Not Found') {
+            return res.status(404).json({
+                success: false,
+                error: 'User Not Found',
+                message: 'The specified user does not exist'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Fetch Operation Failed',
+            message: 'An error occurred while fetching the user profile'
+        });
     }
 };
 
-// Get suggested users to follow
 const getSuggestedUsers = async (req, res) => {
     const userId = req.user.id;
+    const { limit = 5 } = req.query;
 
     try {
-        // Get users that the current user is not following
-        const suggestedUsers = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT u.id, u.username, u.email
-                FROM users u
-                WHERE u.id != ? 
-                AND u.is_active = 1
-                AND u.id NOT IN (
-                    SELECT following_id 
-                    FROM followers 
-                    WHERE follower_id = ?
-                )
-                ORDER BY RANDOM()
-                LIMIT 5
-            `, [userId, userId], (err, rows) => {
-                if (err) reject(err);
-                resolve(rows);
+        const suggestedUsers = await userService.getSuggestedUsers(userId, limit);
+        
+        if (!suggestedUsers.length) {
+            return res.status(200).json({
+                success: true,
+                data: [],
+                message: 'No suggested users found'
             });
-        });
+        }
 
-        res.json({ users: suggestedUsers });
+        res.json({
+            success: true,
+            data: suggestedUsers,
+            message: `Found ${suggestedUsers.length} suggested users to follow`
+        });
     } catch (error) {
         console.error('Error getting suggested users:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        if (error.message === 'Invalid Limit') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid Parameter',
+                message: 'Limit must be a number between 1 and 20'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Suggestion Fetch Failed',
+            message: 'An error occurred while fetching suggested users'
+        });
+    }
+};
+
+const updateProfile = async (req, res) => {
+    const { userId } = req.params;
+    const { username, email, country } = req.body;
+
+    if (req.user.id !== userId) {
+        return res.status(403).json({
+            success: false,
+            error: 'Unauthorized',
+            message: 'You can only update your own profile'
+        });
+    }
+
+    try {
+        const userData = await userService.updateProfile(userId, { username, email, country });
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: userData
+        });
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        if (error.message === 'User Not Found') {
+            return res.status(404).json({
+                success: false,
+                error: 'User Not Found',
+                message: 'The specified user does not exist'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Update Operation Failed',
+            message: 'An error occurred while updating the profile'
+        });
+    }
+};
+
+const deleteAccount = async (req, res) => {
+    const { userId } = req.params;
+
+    if (req.user.id !== userId) {
+        return res.status(403).json({
+            success: false,
+            error: 'Unauthorized',
+            message: 'You can only delete your own account'
+        });
+    }
+
+    try {
+        const result = await userService.deleteAccount(userId);
+        res.json({
+            success: true,
+            message: 'Account deleted successfully',
+            data: result
+        });
+    } catch (error) {
+        console.error('Error deleting user account:', error);
+        if (error.message === 'User Not Found') {
+            return res.status(404).json({
+                success: false,
+                error: 'User Not Found',
+                message: 'The specified user does not exist'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Delete Operation Failed',
+            message: 'An error occurred while deleting the account'
+        });
     }
 };
 
 module.exports = {
-    getUserProfile,
-    getSuggestedUsers
+    getProfile,
+    getSuggestedUsers,
+    updateProfile,
+    deleteAccount
 }; 

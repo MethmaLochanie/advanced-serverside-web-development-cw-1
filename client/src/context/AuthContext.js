@@ -8,73 +8,73 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  // Initialize auth state
   useEffect(() => {
-    if (token) {
-      // Validate token and fetch user data
-      validateToken();
-    } else {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        try {
+          const { user: userData } = await authService.validateToken(storedToken);
+          setUser(userData);
+          setToken(storedToken);
+        } catch (error) {
+          // If token validation fails, clear everything
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      }
       setLoading(false);
-    }
-  }, [token]);
+    };
 
-  const validateToken = async () => {
-    try {
-      const { user: userData } = await authService.validateToken(token);
-      setUser(userData);
-      setLoading(false);
-    } catch (error) {
-      logout();
-      setLoading(false);
-    }
-  };
+    initializeAuth();
+  }, []);
 
   const login = async (email, password) => {
     try {
-      const { token: newToken, user: userData } = await authService.login(email, password);
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('token', newToken);
-      return { success: true };
-    } catch (error) {
-      const errData = error.response?.data;
-      if (errData?.errors) {
-        return { success: false, error: errData.errors };
+      const response = await authService.login(email, password);
+      if (response.success) {
+        const { token: newToken, user: userData } = response.data;
+        // Save token to localStorage
+        localStorage.setItem('token', newToken);
+        // Update state
+        setToken(newToken);
+        setUser(userData);
       }
+      return response;
+    } catch (error) {
       return {
         success: false,
-        error: errData?.message || 'Login failed'
+        error: error.response?.data?.message || 'Login failed'
       };
     }
   };
 
   const register = async (username, email, password) => {
     try {
-      const data = await authService.register(username, email, password);
-      return { success: true, data };
+      const response = await authService.register(username, email, password);
+      return response;
     } catch (error) {
-      const errData = error.response?.data;
-      if (errData?.errors) {
-        return { success: false, error: errData.errors };
-      }
       return {
         success: false,
-        error: errData?.message || 'Registration failed'
+        error: error.response?.data?.message || 'Registration failed'
       };
     }
   };
 
   const logout = () => {
+    // Clear token from localStorage
+    localStorage.removeItem('token');
+    // Clear state
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
   };
 
   const value = {
     user,
     token,
-    isAuthenticated: user,
+    isAuthenticated: !!user,
     loading,
-    validateToken,
     login,
     register,
     logout
