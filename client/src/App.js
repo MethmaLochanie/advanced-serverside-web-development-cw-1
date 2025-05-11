@@ -18,31 +18,31 @@ import EditBlogPost from './pages/EditBlogPost';
 import Profile from './pages/Profile';
 import FollowedFeed from './components/FollowedFeed';
 
-const ProtectedRoute = ({ children, requireAdmin }) => {
-  const { user, isAuthenticated } = useAuth();
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
  
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
 
-  if (requireAdmin && user?.role !== 'admin') {
-    return <Navigate to="/dashboard" />;
-  }
+  // if (requireAdmin && user?.role !== 'admin') {
+  //   return <Navigate to="/dashboard" />;
+  // }
 
   return children;
 };
 
-// Admin Route component
-const AdminRoute = () => {
-  console.log('AdminRoute rendering');
-  return (
-    <ProtectedRoute requireAdmin>
-      <Layout>
-        <AdminDashboard />
-      </Layout>
-    </ProtectedRoute>
-  );
-};
+// // Admin Route component
+// const AdminRoute = () => {
+//   console.log('AdminRoute rendering');
+//   return (
+//     <ProtectedRoute requireAdmin>
+//       <Layout>
+//         <AdminDashboard />
+//       </Layout>
+//     </ProtectedRoute>
+//   );
+// };
 
 function App() {
   return (
@@ -54,38 +54,34 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/posts" element={
-              <PublicLayout>
-                <BlogPosts />
-              </PublicLayout>
-            } />
+
             
             {/* Protected routes */}
-            <Route path="/dashboard" element={
+            <Route path="/posts" element={
               <ProtectedRoute>
                 <Layout>
-                  <Dashboard />
+                  <BlogPosts />
                 </Layout>
               </ProtectedRoute>
             } />
             
             {/* Admin route */}
-            <Route path="/admin" element={<AdminRoute />} />
+            {/* <Route path="/admin" element={<AdminRoute />} /> */}
             
-            <Route path="/countries" element={
+            {/* <Route path="/countries" element={
               <ProtectedRoute>
                 <Layout>
                   <Countries />
                 </Layout>
               </ProtectedRoute>
-            } />
-            <Route path="/api-keys" element={
+            } /> */}
+            {/* <Route path="/api-keys" element={
               <ProtectedRoute>
                 <Layout>
                   <ApiKeys />
                 </Layout>
               </ProtectedRoute>
-            } />
+            } /> */}
 
             {/* Blog post routes */}
             <Route path="/posts/create" element={
