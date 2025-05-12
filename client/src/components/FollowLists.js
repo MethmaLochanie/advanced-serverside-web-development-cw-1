@@ -13,9 +13,11 @@ import {
     Link
 } from '@mui/material';
 import FollowButton from './FollowButton';
+import { useAuth } from '../context/AuthContext';
 
-const FollowLists = ({ users = [], loading, onRefresh }) => {
+const FollowLists = ({ users = [], loading, onRefresh, followingIds = [] }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleUserClick = (userId) => {
         navigate(`/profile/${userId}`);
@@ -49,6 +51,7 @@ const FollowLists = ({ users = [], loading, onRefresh }) => {
                         secondaryAction={
                             <FollowButton
                                 targetUserId={user.id}
+                                initialIsFollowing={followingIds.includes(user.id)}
                                 onFollowChange={onRefresh}
                             />
                         }

@@ -11,12 +11,12 @@ const followUser = async (followerId, followingId) => {
         throw new Error('User Not Found');
     }
 
-    const isFollowing = await Follow.exists(followerId, followingId);
+    const isFollowing = await Follow.isFollowing(followerId, followingId);
     if (isFollowing) {
         throw new Error('Already Following');
     }
 
-    await Follow.create(followerId, followingId);
+    await Follow.follow(followerId, followingId);
     return {
         followingId: following.id,
         username: following.username
@@ -24,17 +24,17 @@ const followUser = async (followerId, followingId) => {
 };
 
 const unfollowUser = async (followerId, followingId) => {
-    const isFollowing = await Follow.exists(followerId, followingId);
+    const isFollowing = await Follow.isFollowing(followerId, followingId);
     if (!isFollowing) {
         throw new Error('Follow Relationship Not Found');
     }
 
-    const following = await User.findById(followingId);
-    if (!following) {
+    const isUserExists = await User.findById(followingId);
+    if (!isUserExists) {
         throw new Error('User Not Found');
     }
 
-    await Follow.delete(followerId, followingId);
+    await Follow.unfollow(followerId, followingId);
     return {
         followingId: following.id,
         username: following.username

@@ -7,6 +7,7 @@ import { useUsers } from '../hooks/useUsers';
 import UserProfile from '../components/UserProfile';
 import FollowLists from '../components/FollowLists';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import FollowButton from '../components/FollowButton';
 
 const Profile = () => {
     const [profileUser, setProfileUser] = useState(null);
@@ -16,7 +17,6 @@ const Profile = () => {
     const [showSuggestedUsers, setShowSuggestedUsers] = useState(false);
     const [listsLoading, setListsLoading] = useState(false);
     const { userId } = useParams();
-    const { user } = useAuth();
     const { getFollowers, getFollowing } = useFollow();
     const { 
         getUserProfile, 
@@ -24,6 +24,7 @@ const Profile = () => {
         loading: profileLoading, 
         error: profileError 
     } = useUsers();
+    const { user } = useAuth();
 
     // Fetch user profile
     useEffect(() => {
@@ -76,7 +77,7 @@ const Profile = () => {
     const fetchSuggestedUsers = useCallback(async () => {
         try {
             const data = await getSuggestedUsersFromHook();
-            setSuggestedUsers(data.users || []);
+            setSuggestedUsers(data.data || []);
             setShowSuggestedUsers(true);
         } catch (error) {
             console.error('Error fetching suggested users:', error);
@@ -99,100 +100,138 @@ const Profile = () => {
         );
     }
 
-    if (!profileUser) {
-        return (
-            <Container>
-                <Alert severity="error">User not found</Alert>
-            </Container>
-        );
-    }
-
     return (
-        <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
-            <Paper elevation={4} sx={{ p: 4, borderRadius: 4, mb: 4, background: '#f8fafc' }}>
-                <Stack direction="row" spacing={3} alignItems="center">
-                    <Avatar sx={{ width: 90, height: 90, fontSize: 40, bgcolor: '#bdbdbd', border: '4px solid #fff' }}>
-                        {profileUser.username ? profileUser.username[0].toUpperCase() : <PersonOutlineIcon fontSize="large" />}
-                    </Avatar>
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} gutterBottom>
-                            {profileUser.username}
-                        </Typography>
-                        <Typography variant="h6" color="text.secondary">
-                            {profileUser.email}
-                        </Typography>
-                    </Box>
-                </Stack>
-            </Paper>
-
-            <Box sx={{ mt: 4, display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                <Paper elevation={2} sx={{ flex: 1, minWidth: 280, p: 3, borderRadius: 3, background: '#fff' }}>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                        Followers
-                    </Typography>
-                    <FollowLists 
-                        users={followers}
-                        loading={listsLoading}
-                        onRefresh={fetchFollowData}
-                        emptyMessage={
-                            <Stack alignItems="center" spacing={1}>
-                                <PersonOutlineIcon color="disabled" fontSize="large" />
-                                <Typography color="text.secondary">No followers yet</Typography>
-                            </Stack>
-                        }
-                    />
+        <Container>
+            {!profileUser ? (
+                <Alert severity="error" sx={{ mt: 4 }}>User not found</Alert>
+            ) : (
+                <>
+                <Paper
+                    elevation={4}
+                    sx={{
+                        p: 4,
+                        borderRadius: 4,
+                        mb: 4,
+                        background: user && profileUser && user.id === profileUser.id ? '#e3f2fd' : '#f8fafc',
+                        border: user && profileUser && user.id === profileUser.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                        position: 'relative'
+                    }}
+                >
+                    <Stack direction="row" spacing={3} alignItems="center">
+                        <Avatar sx={{ width: 90, height: 90, fontSize: 40, bgcolor: '#bdbdbd', border: '4px solid #fff' }}>
+                            {profileUser.username ? profileUser.username[0].toUpperCase() : <PersonOutlineIcon fontSize="large" />}
+                        </Avatar>
+                        <Box>
+                            <Typography variant="h4" fontWeight={700} gutterBottom>
+                                {profileUser.username}
+                            </Typography>
+                            <Typography variant="h6" color="text.secondary">
+                                {profileUser.email}
+                            </Typography>
+                            <Box sx={{ mt: 1, display: 'flex', gap: 3 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Followers: <strong>{profileUser.followerCount}</strong>
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Following: <strong>{profileUser.followingCount}</strong>
+                                </Typography>
+                            </Box>
+                            {user && profileUser && user.id === profileUser.id ? (
+                                <Button variant="outlined" color="primary" sx={{ mt: 2 }}>
+                                    Edit Profile
+                                </Button>
+                            ) : (
+                                <Box sx={{ mt: 2 }}>
+                                    <FollowButton
+                                        targetUserId={profileUser.id}
+                                        initialIsFollowing={followers.some(f => f.id === user?.id)}
+                                        onFollowChange={fetchFollowData}
+                                    />
+                                </Box>
+                            )}
+                        </Box>
+                        {user && profileUser && user.id === profileUser.id && (
+                            <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+                                <Button variant="contained" color="primary" size="small" sx={{ fontWeight: 700 }} disabled>
+                                    Your Profile
+                                </Button>
+                            </Box>
+                        )}
+                    </Stack>
                 </Paper>
-                <Paper elevation={2} sx={{ flex: 1, minWidth: 280, p: 3, borderRadius: 3, background: '#fff' }}>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                        Following
-                    </Typography>
-                    <FollowLists 
-                        users={following}
-                        loading={listsLoading}
-                        onRefresh={fetchFollowData}
-                        emptyMessage={
-                            <Stack alignItems="center" spacing={1}>
-                                <PersonOutlineIcon color="disabled" fontSize="large" />
-                                <Typography color="text.secondary">Not following anyone</Typography>
-                            </Stack>
-                        }
-                    />
-                </Paper>
-            </Box>
 
-            {!showSuggestedUsers && (
-                <Box sx={{ mt: 6, textAlign: 'center' }}>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        size="large" 
-                        sx={{ borderRadius: 3, px: 4, py: 1.5, fontWeight: 600, boxShadow: 2 }}
-                        onClick={fetchSuggestedUsers}
-                    >
-                        Find people to follow
-                    </Button>
-                </Box>
-            )}
-
-            {showSuggestedUsers && (
-                <Box sx={{ mt: 6 }}>
-                    <Typography variant="h5" fontWeight={700} gutterBottom>
-                        Suggested Users
-                    </Typography>
-                    <Paper elevation={1} sx={{ p: 2, borderRadius: 3, background: '#f4f6fa' }}>
+                <Box sx={{ mt: 4, display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                    <Paper elevation={2} sx={{ flex: 1, minWidth: 280, p: 3, borderRadius: 3, background: '#fff' }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                            Followers
+                        </Typography>
                         <FollowLists 
-                            users={suggestedUsers}
+                            users={followers}
                             loading={listsLoading}
                             onRefresh={fetchFollowData}
+                            followingIds={followers.map(u => u.id)}
                             emptyMessage={
                                 <Stack alignItems="center" spacing={1}>
                                     <PersonOutlineIcon color="disabled" fontSize="large" />
-                                    <Typography color="text.secondary">No suggestions right now</Typography>
+                                    <Typography color="text.secondary">No followers yet</Typography>
+                                </Stack>
+                            }
+                        />
+                    </Paper>
+                    <Paper elevation={2} sx={{ flex: 1, minWidth: 280, p: 3, borderRadius: 3, background: '#fff' }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                            Following
+                        </Typography>
+                        <FollowLists 
+                            users={following}
+                            loading={listsLoading}
+                            onRefresh={fetchFollowData}
+                            followingIds={following.map(u => u.id)}
+                            emptyMessage={
+                                <Stack alignItems="center" spacing={1}>
+                                    <PersonOutlineIcon color="disabled" fontSize="large" />
+                                    <Typography color="text.secondary">Not following anyone</Typography>
                                 </Stack>
                             }
                         />
                     </Paper>
                 </Box>
+
+                {!showSuggestedUsers && (
+                    <Box sx={{ mt: 6, textAlign: 'center' }}>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            size="large" 
+                            sx={{ borderRadius: 3, px: 4, py: 1.5, fontWeight: 600, boxShadow: 2 }}
+                            onClick={fetchSuggestedUsers}
+                        >
+                            Find people to follow
+                        </Button>
+                    </Box>
+                )}
+
+                {showSuggestedUsers && (
+                    <Box sx={{ mt: 6 }}>
+                        <Typography variant="h5" fontWeight={700} gutterBottom>
+                            Suggested Users
+                        </Typography>
+                        <Paper elevation={1} sx={{ p: 2, borderRadius: 3, background: '#f4f6fa' }}>
+                            <FollowLists 
+                                users={suggestedUsers}
+                                loading={listsLoading}
+                                onRefresh={fetchFollowData}
+                                emptyMessage={
+                                    <Stack alignItems="center" spacing={1}>
+                                        <PersonOutlineIcon color="disabled" fontSize="large" />
+                                        <Typography color="text.secondary">No suggestions right now</Typography>
+                                    </Stack>
+                                }
+                            />
+                        </Paper>
+                    </Box>
+                )}
+                </>
             )}
         </Container>
     );

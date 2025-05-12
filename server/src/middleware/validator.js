@@ -62,7 +62,7 @@ const validations = {
             .trim()
             .notEmpty()
             .withMessage('Content is required'),
-        body('country')
+        body('country_name')
             .trim()
             .notEmpty()
             .withMessage('Country is required')
@@ -79,7 +79,7 @@ const validations = {
         body('content')
             .optional()
             .trim(),
-        body('country')
+        body('country_name')
             .optional()
             .trim()
     ],

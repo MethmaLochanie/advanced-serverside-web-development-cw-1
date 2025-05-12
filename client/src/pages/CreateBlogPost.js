@@ -23,7 +23,20 @@ const CreateBlogPost = () => {
                 setError(response.error || 'Failed to create blog post');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create blog post. Please try again.');
+            // If the error is a JS Error (from validation), show its message
+            if (err instanceof Error && err.message && !err.response) {
+                setError(err.message);
+                return;
+            }
+            // Otherwise, handle API errors as before
+            const apiError = err.response?.data;
+            if (apiError?.errors && apiError.errors.length > 0) {
+                setError(apiError.errors.map(e => e.msg).join(', '));
+            } else if (apiError?.message) {
+                setError(apiError.message);
+            } else {
+                setError('Failed to create blog post. Please try again.');
+            }
         }
     };
 

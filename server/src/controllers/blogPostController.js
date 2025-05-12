@@ -2,28 +2,31 @@ const blogPostService = require('../services/blogPostService');
 
 const createPost = async (req, res, next) => {
     try {
-        const { title, content, country } = req.body;
+        const { title, content, country_name, date_of_visit } = req.body;
         const userId = req.user.id;
-        if (!title || !content || !country) {
+        if (!title || !content || !country_name || !date_of_visit) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing Required Fields',
-                message: 'Title, content, and country are required'
+                message: 'Title, content, country, and date of visit are required'
             });
         }
 
-        const post = await blogPostService.createPost(userId, { title, content, country });
+        const post = await blogPostService.createPost(userId, { title, content, country_name, date_of_visit });
         res.status(201).json({
             success: true,
             message: 'Blog post created successfully',
             data: post
         });
     } catch (error) {
-        if (error.message === 'Invalid Country') {
+        if (
+            error.message === 'Invalid Country' ||
+            error.message === 'Country not found'
+        ) {
             return res.status(400).json({
                 success: false,
                 error: 'Invalid Country',
-                message: 'The specified country does not exist'
+                message: 'Country not found'
             });
         }
         next(error);
@@ -79,8 +82,8 @@ const getPost = async (req, res, next) => {
 
 const updatePost = async (req, res, next) => {
     try {
-        const { title, content, country } = req.body;
-        const post = await blogPostService.updatePost(req.params.id, req.user.id, { title, content, country });
+        const { title, content, country_name } = req.body;
+        const post = await blogPostService.updatePost(req.params.id, req.user.id, { title, content, country_name });
 
         if (!post) {
             return res.status(404).json({
@@ -103,11 +106,14 @@ const updatePost = async (req, res, next) => {
                 message: 'You are not authorized to update this post'
             });
         }
-        if (error.message === 'Invalid Country') {
+        if (
+            error.message === 'Invalid Country' ||
+            error.message === 'Country not found'
+        ) {
             return res.status(400).json({
                 success: false,
                 error: 'Invalid Country',
-                message: 'The specified country does not exist'
+                message: 'Country not found'
             });
         }
         next(error);

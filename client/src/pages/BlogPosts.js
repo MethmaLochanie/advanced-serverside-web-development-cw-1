@@ -50,16 +50,16 @@ const BlogPosts = () => {
       const response = await getAllPosts();
 
       if (response.success) {
-        setPosts(response.data.posts || []);
+        setPosts(response.data || []);
         setPagination(
-          response.data.pagination || {
+          response.data?.pagination || {
             currentPage: 1,
             totalPages: 1,
             totalItems: 0,
             itemsPerPage: 10,
           }
         );
-        if (!response.data.posts || response.data.posts.length === 0) {
+        if (!response.data || response.data.length === 0) {
           setSuccessMessage("No blog posts found");
         }
       } else {
@@ -103,7 +103,7 @@ const BlogPosts = () => {
           : await searchByUsername(searchQuery, pagination.currentPage);
 
       if (response.success) {
-        setPosts(response.data?.posts || []);
+        setPosts(response.data || []);
         setPagination(
           response.data?.pagination || {
             currentPage: 1,
@@ -112,7 +112,7 @@ const BlogPosts = () => {
             itemsPerPage: 10,
           }
         );
-        if (!response.data?.posts || response.data.posts.length === 0) {
+        if (!response.data || response.data.length === 0) {
           setSuccessMessage(
             `No posts found for ${
               searchType === "country" ? "country" : "username"

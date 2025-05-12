@@ -6,13 +6,16 @@ const getProfile = async (userId) => {
     if (!user) {
         throw new Error('User Not Found');
     }
-
+    const followerCount = await Follow.getFollowerCount(userId);
+    const followingCount = await Follow.getFollowingCount(userId);
     return {
         id: user.id,
         username: user.username,
         email: user.email,
         country: user.country,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        followerCount,
+        followingCount
     };
 };
 

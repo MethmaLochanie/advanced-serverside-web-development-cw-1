@@ -15,8 +15,10 @@ const BlogPostForm = ({ initialData, onSubmit, isEditing = false }) => {
   useEffect(() => {
     if (initialData) {
       setFormData({
-        ...initialData,
-        date_of_visit: new Date(initialData.date_of_visit),
+        title: initialData.title || "",
+        content: initialData.content || "",
+        country_name: initialData.country_name || "",
+        date_of_visit: initialData.date_of_visit ? new Date(initialData.date_of_visit) : new Date(),
       });
     }
   }, [initialData]);
@@ -63,9 +65,9 @@ const BlogPostForm = ({ initialData, onSubmit, isEditing = false }) => {
 
       <TextField
         fullWidth
-        label="Country Name"
+        label="Country"
         name="country_name"
-        value={formData.country_name}
+        value={formData.country_name || ""}
         onChange={handleChange}
         required
         margin="normal"

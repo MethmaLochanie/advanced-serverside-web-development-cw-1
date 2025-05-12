@@ -22,11 +22,10 @@ class User {
     }
 
     static async create({ username, email, password }) {
-        const hashedPassword = await bcrypt.hash(password, 10);
         return new Promise((resolve, reject) => {
             db.run(
                 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                [username, email, hashedPassword],
+                [username, email, password],
                 function(err) {
                     if (err) reject(err);
                     else resolve(this.lastID);

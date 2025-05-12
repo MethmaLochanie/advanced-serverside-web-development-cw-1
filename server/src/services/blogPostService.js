@@ -1,10 +1,10 @@
 const BlogPost = require('../database/models/BlogPost');
 const { validateAndGetCountryDetails } = require('../utils/countryApi');
 
-// Helper function to enrich post with country details
+// Helper function to enrich post with country_name details
 const enrichPostWithCountryDetails = async (post) => {
     try {
-        const countryDetails = await validateAndGetCountryDetails(post.country);
+        const countryDetails = await validateAndGetCountryDetails(post.country_name);
         return {
             ...post,
             country_flag: countryDetails.flag,
@@ -18,14 +18,15 @@ const enrichPostWithCountryDetails = async (post) => {
 };
 
 
-const createPost = async (userId, { title, content, country }) => {
-    // Validate country exists
-    await validateAndGetCountryDetails(country);
+const createPost = async (userId, { title, content, country_name, date_of_visit }) => {
+    // Validate country_name exists
+    await validateAndGetCountryDetails(country_name);
 
     return await BlogPost.create({
         title,
         content,
-        country,
+        country_name,
+        date_of_visit,
         user_id: userId
     });
 };
@@ -71,16 +72,16 @@ const getPost = async (postId) => {
     return await enrichPostWithCountryDetails(post);
 };
 
-const updatePost = async (postId, userId, { title, content, country }) => {
+const updatePost = async (postId, userId, { title, content, country_name }) => {
     const post = await BlogPost.findById(postId);
     if (!post) return null;
 
     if (post.user_id !== userId) {
         throw new Error('Unauthorized');
     }
-    if (country && country !== post.country) {
-        await validateAndGetCountryDetails(country);
-        post.country = country;
+    if (country_name && country_name !== post.country_name) {
+        await validateAndGetCountryDetails(country_name);
+        post.country_name = country_name;
     }
 
     if (title) post.title = title;
@@ -102,9 +103,9 @@ const deletePost = async (postId, userId) => {
     return true;
 };
 
-const searchByCountry = async (country, page = 1, limit = 10) => {
-    const posts = await BlogPost.findByCountry(country, parseInt(page), parseInt(limit));
-    const total = await BlogPost.getTotalCountByCountry(country);
+const searchByCountry = async (country_name, page = 1, limit = 10) => {
+    const posts = await BlogPost.findByCountry(country_name, parseInt(page), parseInt(limit));
+    const total = await BlogPost.getTotalCountByCountry(country_name);
 
     if (!posts.length) {
         return {

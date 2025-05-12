@@ -36,30 +36,27 @@ const BlogPostCard = ({ post, onDelete, isOwner, countryInfo }) => {
             Visited on {format(new Date(post.date_of_visit), "MMMM d, yyyy")}
           </Typography>
         </Box>
-        {countryInfo && (
+        {/* Country info display */}
+        {(post.country_flag || post.country_capital || post.country_currency) && (
           <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
-            {countryInfo.flag?.png && (
+            {post.country_flag && (
               <img
-                src={countryInfo.flag.png}
-                alt={countryInfo.flag.alt || "Flag"}
-                style={{
-                  width: 40,
-                  height: 28,
-                  objectFit: "cover",
-                  borderRadius: 4,
-                }}
+                src={post.country_flag}
+                alt={post.country_name + " flag"}
+                style={{ width: 40, height: 28, objectFit: "cover", borderRadius: 4 }}
               />
             )}
             <Box>
-              <Typography variant="body2">
-                <strong>Capital:</strong> {countryInfo.capital}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Currency:</strong>{" "}
-                {countryInfo.currencies
-                  .map((c) => `${c.name} (${c.symbol})`)
-                  .join(", ")}
-              </Typography>
+              {post.country_capital && (
+                <Typography variant="body2">
+                  <strong>Capital:</strong> {post.country_capital}
+                </Typography>
+              )}
+              {post.country_currency && (
+                <Typography variant="body2">
+                  <strong>Currency:</strong> {post.country_currency}
+                </Typography>
+              )}
             </Box>
           </Box>
         )}
