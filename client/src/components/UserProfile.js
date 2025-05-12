@@ -9,18 +9,26 @@ import {
 import FollowButton from './FollowButton';
 
 const UserProfile = ({ profileUser, currentUser, onRefreshLists }) => {
+    if (!profileUser) {
+        return null;
+    }
+
+    const getInitial = (username) => {
+        return username ? username[0].toUpperCase() : '?';
+    };
+
     return (
         <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
             <Box display="flex" alignItems="center" mb={3}>
                 <Avatar sx={{ width: 100, height: 100, mr: 3 }}>
-                    {profileUser.username[0].toUpperCase()}
+                    {getInitial(profileUser.username)}
                 </Avatar>
                 <Box flex={1}>
                     <Typography variant="h4" gutterBottom>
-                        {profileUser.username}
+                        {profileUser.username || 'Unknown User'}
                     </Typography>
                     <Typography variant="body1" color="textSecondary">
-                        {profileUser.email}
+                        {profileUser.email || 'No email provided'}
                     </Typography>
                 </Box>
                 {currentUser && currentUser.id !== profileUser.id && (

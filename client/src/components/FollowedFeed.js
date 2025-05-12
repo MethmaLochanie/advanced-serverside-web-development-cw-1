@@ -44,16 +44,18 @@ const FollowedFeed = () => {
             const response = await getFollowedFeed(user.id, page);
             
             if (response.success) {
-                setPosts(response.data.posts);
-                setTotalPages(response.data.pagination.totalPages);
-                if (response.data.posts.length === 0) {
+                setPosts(response.data.posts || []);
+                setTotalPages(response.data.pagination?.totalPages || 1);
+                if (!response.data.posts || response.data.posts.length === 0) {
                     setSuccessMessage('No posts found from users you follow');
                 }
             } else {
                 setError(response.error || 'Failed to fetch posts');
+                setPosts([]);
             }
         } catch (error) {
             setError(error.response?.data?.message || 'An error occurred while fetching posts');
+            setPosts([]);
         } finally {
             setLoading(false);
         }
@@ -136,75 +138,83 @@ const FollowedFeed = () => {
                 </Alert>
             </Snackbar>
 
-            {posts.map((post) => (
-                <Card key={post.id} sx={{ mb: 2 }}>
-                    <CardHeader
-                        avatar={
-                            <Avatar>{post.username[0].toUpperCase()}</Avatar>
-                        }
-                        title={
-                            <Link
-                                component="button"
-                                variant="body2"
-                                onClick={() => handleUserClick(post.user_id)}
-                                sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-                            >
-                                {post.username}
-                            </Link>
-                        }
-                        subheader={new Date(post.created_at).toLocaleDateString()}
-                    />
-                    <Divider />
-                    <CardContent>
-                        {post.country && (
-                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                {post.country.flag && (
-                                    <img 
-                                        src={post.country.flag} 
-                                        alt={post.country.name} 
-                                        style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} 
-                                    />
+            {(!posts || posts.length === 0) ? (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                    No posts found from users you follow
+                </Alert>
+            ) : (
+                <>
+                    {posts.map((post) => (
+                        <Card key={post.id} sx={{ mb: 2 }}>
+                            <CardHeader
+                                avatar={
+                                    <Avatar>{post.username[0].toUpperCase()}</Avatar>
+                                }
+                                title={
+                                    <Link
+                                        component="button"
+                                        variant="body2"
+                                        onClick={() => handleUserClick(post.user_id)}
+                                        sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                                    >
+                                        {post.username}
+                                    </Link>
+                                }
+                                subheader={new Date(post.created_at).toLocaleDateString()}
+                            />
+                            <Divider />
+                            <CardContent>
+                                {post.country && (
+                                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        {post.country.flag && (
+                                            <img 
+                                                src={post.country.flag} 
+                                                alt={post.country.name} 
+                                                style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} 
+                                            />
+                                        )}
+                                        <Box>
+                                            <Typography variant="body2">
+                                                <strong>Country:</strong> {post.country.name}
+                                            </Typography>
+                                            {post.country.capital && (
+                                                <Typography variant="body2">
+                                                    <strong>Capital:</strong> {post.country.capital}
+                                                </Typography>
+                                            )}
+                                            {post.country.currencies && post.country.currencies.length > 0 && (
+                                                <Typography variant="body2">
+                                                    <strong>Currency:</strong> {post.country.currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Box>
                                 )}
-                                <Box>
-                                    <Typography variant="body2">
-                                        <strong>Country:</strong> {post.country.name}
-                                    </Typography>
-                                    {post.country.capital && (
-                                        <Typography variant="body2">
-                                            <strong>Capital:</strong> {post.country.capital}
-                                        </Typography>
-                                    )}
-                                    {post.country.currencies && post.country.currencies.length > 0 && (
-                                        <Typography variant="body2">
-                                            <strong>Currency:</strong> {post.country.currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Box>
-                        )}
-                        <Typography variant="h6" gutterBottom>
-                            {post.title}
-                        </Typography>
-                        <Typography variant="body1" paragraph>
-                            {post.content}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Visit Date: {new Date(post.date_of_visit).toLocaleDateString()}
-                        </Typography>
-                    </CardContent>
-                </Card>
-            ))}
+                                <Typography variant="h6" gutterBottom>
+                                    {post.title}
+                                </Typography>
+                                <Typography variant="body1" paragraph>
+                                    {post.content}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Visit Date: {new Date(post.date_of_visit).toLocaleDateString()}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    ))}
 
-            {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
-                    <Pagination
-                        count={totalPages}
-                        page={page}
-                        onChange={handlePageChange}
-                        color="primary"
-                        size="large"
-                    />
-                </Box>
+                    {totalPages > 1 && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+                            <Pagination
+                                count={totalPages}
+                                page={page}
+                                onChange={handlePageChange}
+                                color="primary"
+                                size="large"
+                            />
+                        </Box>
+                    )}
+                </>
             )}
         </Box>
     );

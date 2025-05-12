@@ -28,8 +28,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login if unauthorized
+    // Only redirect to login if it's a token expiration error
+    if (error.response?.status === 401 && error.response?.data?.error === 'Token Expired') {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

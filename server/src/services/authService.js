@@ -21,16 +21,12 @@ const login = async ({ email, password }) => {
     const user = await User.findByEmail(email);
 
     if (!user) {
-        throw new Error('Authentication Failed');
-    }
-
-    if (!user.is_active) {
-        throw new Error('Account Inactive');
+        throw new Error('User Not Found');
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-        throw new Error('Authentication Failed');
+        throw new Error('Invalid Password');
     }
 
     await User.updateLastLogin(user.id);
@@ -54,6 +50,5 @@ const login = async ({ email, password }) => {
 
 module.exports = {
     register,
-    login,
-    validateToken
+    login
 }; 

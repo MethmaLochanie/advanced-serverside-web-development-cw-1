@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { userService } from '../api/users';
 
 export const useUsers = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const getUserProfile = async (userId) => {
+    const getUserProfile = useCallback(async (userId) => {
         setLoading(true);
         setError(null);
         try {
@@ -17,9 +17,9 @@ export const useUsers = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getSuggestedUsers = async () => {
+    const getSuggestedUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -31,7 +31,7 @@ export const useUsers = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     return {
         getUserProfile,

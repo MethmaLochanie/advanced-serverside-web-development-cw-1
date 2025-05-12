@@ -168,6 +168,18 @@ class BlogPost {
             });
         });
     }
+
+    static async getTotalCount() {
+        return new Promise((resolve, reject) => {
+            db.get(`
+                SELECT COUNT(*) as total
+                FROM blog_posts
+            `, (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.total : 0);
+            });
+        });
+    }
 }
 
 module.exports = BlogPost; 

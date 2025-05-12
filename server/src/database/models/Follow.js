@@ -121,7 +121,6 @@ class Follow {
                 SELECT u.id, u.username, u.email
                 FROM users u
                 WHERE u.id != ? 
-                AND u.is_active = 1
                 AND u.id NOT IN (
                     SELECT following_id 
                     FROM followers 

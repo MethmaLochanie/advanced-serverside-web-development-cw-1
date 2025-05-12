@@ -16,12 +16,12 @@ import {
 import BlogPostCard from "../components/BlogPostCard";
 import { useAuth } from "../context/AuthContext";
 import { useBlogPosts } from "../hooks/useBlogPosts";
-import SearchIcon from '@mui/icons-material/Search';
-import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 
 const BlogPosts = () => {
   const [posts, setPosts] = useState([]);
-  const [searchType, setSearchType] = useState("country");
+  const [searchType, setSearchType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -33,37 +33,59 @@ const BlogPosts = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const { user } = useAuth();
-  const { 
-    getAllPosts, 
-    searchByCountry, 
-    searchByUsername, 
+  const {
+    getAllPosts,
+    searchByCountry,
+    searchByUsername,
     deletePost,
     loading: postsLoading,
-    error: postsError 
+    error: postsError,
   } = useBlogPosts();
 
   const fetchPosts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await getAllPosts();
-      
+
       if (response.success) {
-        setPosts(response.data.posts);
-        setPagination(response.data.pagination);
-        if (response.data.posts.length === 0) {
-          setSuccessMessage('No blog posts found');
+        setPosts(response.data.posts || []);
+        setPagination(
+          response.data.pagination || {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: 10,
+          }
+        );
+        if (!response.data.posts || response.data.posts.length === 0) {
+          setSuccessMessage("No blog posts found");
         }
       } else {
-        setError(response.error || 'Failed to fetch posts');
+        setError(response.error || "Failed to fetch posts");
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0,
+          itemsPerPage: 10,
+        });
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred while fetching posts');
+      setError(
+        error.response?.data?.message ||
+          "An error occurred while fetching posts"
+      );
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10,
+      });
     } finally {
       setLoading(false);
     }
-  }; 
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -73,23 +95,38 @@ const BlogPosts = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = searchType === 'country' 
-        ? await searchByCountry(searchQuery, pagination.currentPage)
-        : await searchByUsername(searchQuery, pagination.currentPage);
-      
+      const response =
+        searchType === "country"
+          ? await searchByCountry(searchQuery, pagination.currentPage)
+          : await searchByUsername(searchQuery, pagination.currentPage);
+
       if (response.success) {
-        setPosts(response.data.posts);
-        setPagination(response.data.pagination);
-        if (response.data.posts.length === 0) {
-          setSuccessMessage(`No posts found for ${searchType === 'country' ? 'country' : 'username'}: ${searchQuery}`);
+        setPosts(response.data?.posts || []);
+        setPagination(
+          response.data?.pagination || {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: 10,
+          }
+        );
+        if (!response.data?.posts || response.data.posts.length === 0) {
+          setSuccessMessage(
+            `No posts found for ${
+              searchType === "country" ? "country" : "username"
+            }: ${searchQuery}`
+          );
         }
       } else {
-        setError(response.error || 'Failed to search posts');
+        setError(response.error || "Failed to search posts");
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred while searching posts');
+      setError(
+        error.response?.data?.message ||
+          "An error occurred while searching posts"
+      );
     } finally {
       setLoading(false);
     }
@@ -110,14 +147,26 @@ const BlogPosts = () => {
     });
   };
 
+  const handleAllPosts = () => {
+    setSearchType("all");
+    setSearchQuery("");
+    setPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: 10,
+    });
+    fetchPosts();
+  };
+
   const handleDelete = async (postId) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
         await deletePost(postId);
         setPosts(posts.filter((post) => post.id !== postId));
-        setSuccessMessage('Post deleted successfully');
+        setSuccessMessage("Post deleted successfully");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete post');
+        setError(err.response?.data?.message || "Failed to delete post");
       }
     }
   };
@@ -133,7 +182,12 @@ const BlogPosts = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -145,10 +199,10 @@ const BlogPosts = () => {
         open={!!error}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           action={
             <IconButton
               size="small"
@@ -168,10 +222,10 @@ const BlogPosts = () => {
         open={!!successMessage}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert 
-          severity="info" 
+        <Alert
+          severity="info"
           action={
             <IconButton
               size="small"
@@ -193,7 +247,16 @@ const BlogPosts = () => {
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={4} md={4}>
+            <Button
+              variant={searchType === "all" ? "contained" : "outlined"}
+              onClick={handleAllPosts}
+              fullWidth
+            >
+              All Posts
+            </Button>
+          </Grid>
+          <Grid xs={12} sm={4} md={4}>
             <Button
               variant={searchType === "country" ? "contained" : "outlined"}
               onClick={() => handleSearchTypeChange("country")}
@@ -202,7 +265,7 @@ const BlogPosts = () => {
               Search by Country
             </Button>
           </Grid>
-          <Grid xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={4} md={4}>
             <Button
               variant={searchType === "username" ? "contained" : "outlined"}
               onClick={() => handleSearchTypeChange("username")}
@@ -235,7 +298,9 @@ const BlogPosts = () => {
         )}
 
         {posts.length === 0 ? (
-          <Typography>No blog posts found.</Typography>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            No blog posts found.
+          </Alert>
         ) : (
           <>
             {posts.map((post) => (
@@ -246,7 +311,7 @@ const BlogPosts = () => {
                 isOwner={user && user.id === post.user_id}
               />
             ))}
-            
+
             {pagination.totalPages > 1 && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
                 <Pagination

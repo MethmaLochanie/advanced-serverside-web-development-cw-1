@@ -9,6 +9,14 @@ export const authService = {
             });
             return response.data;
         } catch (error) {
+            // Handle specific error cases
+            if (error.response?.data?.error === 'Account Inactive') {
+                return {
+                    success: false,
+                    error: 'Account Inactive',
+                    message: error.response.data.message
+                };
+            }
             throw error;
         }
     },

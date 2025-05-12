@@ -79,11 +79,18 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    if (error.message === 'Authentication Failed') {
+    if (error.message === 'User Not Found') {
+      return res.status(404).json({
+        success: false,
+        error: 'User Not Found',
+        message: 'No account found with this email address'
+      });
+    }
+    if (error.message === 'Invalid Password') {
       return res.status(401).json({
         success: false,
-        error: 'Authentication Failed',
-        message: 'Invalid email or password'
+        error: 'Invalid Password',
+        message: 'The password you entered is incorrect'
       });
     }
     if (error.message === 'Account Inactive') {
@@ -103,6 +110,5 @@ const login = async (req, res) => {
 
 module.exports = {
   register,
-  login,
-  validateToken
+  login
 }; 

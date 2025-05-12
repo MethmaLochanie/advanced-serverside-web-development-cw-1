@@ -30,21 +30,20 @@ const Login = () => {
     setError([]);
     setLoading(true);
 
-    const result = await login(email, password);
-    if (result.success) {
-      navigate('/');
-    } else {
-      if (Array.isArray(result.error)) {
-        setError(result.error.map(e => e.message || e));
-      } else if (typeof result.error === 'string') {
-        setError([result.error]);
-      } else if (result.error && result.error.message) {
-        setError([result.error.message]);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/');
       } else {
-        setError(['An unknown error occurred.']);
+        setError([result.error]);
       }
+    } catch (error) {
+      // Handle error from the backend
+      const errorMessage = error.response?.data?.message || 'An error occurred during login';
+      setError([errorMessage]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);

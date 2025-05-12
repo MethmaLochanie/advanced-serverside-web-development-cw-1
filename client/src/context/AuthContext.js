@@ -14,11 +14,16 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const { user: userData } = await authService.validateToken(storedToken);
+          // Decode the JWT token to get user info
+          const tokenData = JSON.parse(atob(storedToken.split('.')[1]));
+          const userData = {
+            id: tokenData.id,
+            username: tokenData.username
+          };
           setUser(userData);
           setToken(storedToken);
         } catch (error) {
-          // If token validation fails, clear everything
+          // If token is invalid, clear everything
           localStorage.removeItem('token');
           setToken(null);
           setUser(null);
@@ -40,6 +45,11 @@ export const AuthProvider = ({ children }) => {
         // Update state
         setToken(newToken);
         setUser(userData);
+      } else if (response.error === 'Account Inactive') {
+        // Don't store token or user data for inactive accounts
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
       }
       return response;
     } catch (error) {

@@ -74,29 +74,29 @@ const initializeDatabase = () => {
         `);
         console.log('Users table ready');
 
-        await run(`
-          CREATE TABLE IF NOT EXISTS api_keys (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id    INTEGER NOT NULL,
-            api_key    TEXT UNIQUE NOT NULL,
-            is_active  BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_used  TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-          )
-        `);
-        console.log('API keys table ready');
+        // await run(`
+        //   CREATE TABLE IF NOT EXISTS api_keys (
+        //     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        //     user_id    INTEGER NOT NULL,
+        //     api_key    TEXT UNIQUE NOT NULL,
+        //     is_active  BOOLEAN DEFAULT 1,
+        //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        //     last_used  TIMESTAMP,
+        //     FOREIGN KEY (user_id) REFERENCES users (id)
+        //   )
+        // `);
+        // console.log('API keys table ready');
 
-        await run(`
-          CREATE TABLE IF NOT EXISTS api_usage (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            api_key_id INTEGER NOT NULL,
-            endpoint   TEXT NOT NULL,
-            timestamp  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (api_key_id) REFERENCES api_keys (id)
-          )
-        `);
-        console.log('API usage table ready');
+        // await run(`
+        //   CREATE TABLE IF NOT EXISTS api_usage (
+        //     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        //     api_key_id INTEGER NOT NULL,
+        //     endpoint   TEXT NOT NULL,
+        //     timestamp  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        //     FOREIGN KEY (api_key_id) REFERENCES api_keys (id)
+        //   )
+        // `);
+        // console.log('API usage table ready');
 
         await run(`
           CREATE TABLE IF NOT EXISTS blog_posts (
@@ -127,8 +127,6 @@ const initializeDatabase = () => {
         console.log('Followers table ready');
 
         // Indexes
-        await run('CREATE INDEX IF NOT EXISTS idx_api_keys_user    ON api_keys(user_id)');
-        await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key     ON api_usage(api_key_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_blog_posts_user   ON blog_posts(user_id)');
         console.log('Indexes created');
         resolve();

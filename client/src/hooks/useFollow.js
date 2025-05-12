@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { followUser, unfollowUser, getFollowers, getFollowing, getFollowedUsersPosts } from '../api/followApi';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,14 +7,14 @@ export const useFollow = () => {
     const [error, setError] = useState(null);
     const { user } = useAuth();
 
-    const validateUser = () => {
+    const validateUser = useCallback(() => {
         if (!user) {
             throw new Error('You must be logged in to perform this action');
         }
         return user;
-    };
+    }, [user]);
 
-    const follow = async (followingId) => {
+    const follow = useCallback(async (followingId) => {
         if (!followingId) {
             throw new Error('User ID to follow is required');
         }
@@ -35,9 +35,9 @@ export const useFollow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, validateUser]);
 
-    const unfollow = async (followingId) => {
+    const unfollow = useCallback(async (followingId) => {
         if (!followingId) {
             throw new Error('User ID to unfollow is required');
         }
@@ -55,9 +55,9 @@ export const useFollow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [validateUser]);
 
-    const getFollowersList = async (userId) => {
+    const getFollowersList = useCallback(async (userId) => {
         if (!userId) {
             throw new Error('User ID is required');
         }
@@ -74,9 +74,9 @@ export const useFollow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getFollowingList = async (userId) => {
+    const getFollowingList = useCallback(async (userId) => {
         if (!userId) {
             throw new Error('User ID is required');
         }
@@ -93,9 +93,9 @@ export const useFollow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getFollowedFeed = async (userId, page = 1, limit = 10) => {
+    const getFollowedFeed = useCallback(async (userId, page = 1, limit = 10) => {
         if (!userId) {
             throw new Error('User ID is required');
         }
@@ -113,15 +113,15 @@ export const useFollow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [validateUser]);
 
     return {
         loading,
         error,
         follow,
         unfollow,
-        getFollowersList,
-        getFollowingList,
+        getFollowers: getFollowersList,
+        getFollowing: getFollowingList,
         getFollowedFeed
     };
 }; 

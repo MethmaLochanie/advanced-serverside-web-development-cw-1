@@ -10,7 +10,6 @@ class User {
                     username TEXT UNIQUE NOT NULL,
                     email TEXT UNIQUE NOT NULL,
                     password TEXT NOT NULL,
-                    is_active BOOLEAN DEFAULT 1,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     last_login DATETIME,
                     last_password_change DATETIME
@@ -86,32 +85,6 @@ class User {
             db.run(
                 'UPDATE users SET password = ?, last_password_change = CURRENT_TIMESTAMP WHERE id = ?',
                 [hashedPassword, id],
-                (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                }
-            );
-        });
-    }
-
-    static async deactivate(id) {
-        return new Promise((resolve, reject) => {
-            db.run(
-                'UPDATE users SET is_active = 0 WHERE id = ?',
-                [id],
-                (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                }
-            );
-        });
-    }
-
-    static async activate(id) {
-        return new Promise((resolve, reject) => {
-            db.run(
-                'UPDATE users SET is_active = 1 WHERE id = ?',
-                [id],
                 (err) => {
                     if (err) reject(err);
                     else resolve();
