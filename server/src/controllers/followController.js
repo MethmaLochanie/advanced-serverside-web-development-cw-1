@@ -182,7 +182,8 @@ const getFollowedUsersPosts = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Fetch Operation Failed',
-            message: 'An error occurred while fetching posts from followed users'
+            message: 'An error occurred while fetching posts from followed users',
+            details: error.message
         });
     }
 };

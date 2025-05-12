@@ -3,6 +3,11 @@ const { validateAndGetCountryDetails } = require('../utils/countryApi');
 
 // Helper function to enrich post with country_name details
 const enrichPostWithCountryDetails = async (post) => {
+    if (!post || !post.country_name) {
+        console.error('Invalid post data:', post);
+        return post;
+    }
+
     try {
         const countryDetails = await validateAndGetCountryDetails(post.country_name);
         return {
@@ -13,7 +18,13 @@ const enrichPostWithCountryDetails = async (post) => {
         };
     } catch (error) {
         console.error('Error fetching country details:', error);
-        return post;
+        // Return post without enrichment rather than failing
+        return {
+            ...post,
+            country_flag: null,
+            country_currency: null,
+            country_capital: null
+        };
     }
 };
 
@@ -176,5 +187,6 @@ module.exports = {
     updatePost,
     deletePost,
     searchByCountry,
-    searchByUsername
+    searchByUsername,
+    enrichPostWithCountryDetails
 }; 

@@ -44,9 +44,9 @@ const FollowedFeed = () => {
             const response = await getFollowedFeed(user.id, page);
             
             if (response.success) {
-                setPosts(response.data.posts || []);
-                setTotalPages(response.data.pagination?.totalPages || 1);
-                if (!response.data.posts || response.data.posts.length === 0) {
+                setPosts(response.data || []);
+                setTotalPages(response.pagination?.totalPages || 1);
+                if (!response.data || response.data.length === 0) {
                     setSuccessMessage('No posts found from users you follow');
                 }
             } else {
@@ -164,27 +164,27 @@ const FollowedFeed = () => {
                             />
                             <Divider />
                             <CardContent>
-                                {post.country && (
+                                {post.country_name && (
                                     <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        {post.country.flag && (
+                                        {post.country_flag && (
                                             <img 
-                                                src={post.country.flag} 
-                                                alt={post.country.name} 
+                                                src={post.country_flag} 
+                                                alt={post.country_name} 
                                                 style={{ width: 40, height: 28, objectFit: 'cover', borderRadius: 4 }} 
                                             />
                                         )}
                                         <Box>
                                             <Typography variant="body2">
-                                                <strong>Country:</strong> {post.country.name}
+                                                <strong>Country:</strong> {post.country_name}
                                             </Typography>
-                                            {post.country.capital && (
+                                            {post.country_capital && (
                                                 <Typography variant="body2">
-                                                    <strong>Capital:</strong> {post.country.capital}
+                                                    <strong>Capital:</strong> {post.country_capital}
                                                 </Typography>
                                             )}
-                                            {post.country.currencies && post.country.currencies.length > 0 && (
+                                            {post.country_currency && (
                                                 <Typography variant="body2">
-                                                    <strong>Currency:</strong> {post.country.currencies.map(c => `${c.name} (${c.symbol})`).join(', ')}
+                                                    <strong>Currency:</strong> {post.country_currency}
                                                 </Typography>
                                             )}
                                         </Box>
