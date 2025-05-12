@@ -29,8 +29,8 @@ const unfollowUser = async (followerId, followingId) => {
         throw new Error('Follow Relationship Not Found');
     }
 
-    const isUserExists = await User.findById(followingId);
-    if (!isUserExists) {
+    const following = await User.findById(followingId);
+    if (!following) {
         throw new Error('User Not Found');
     }
 

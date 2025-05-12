@@ -4,7 +4,7 @@ const { followUser, unfollowUser, getFollowers, getFollowing, getFollowedUsersPo
 const { verifyToken } = require('../middleware/auth');
 
 router.post('/follow', verifyToken, followUser);
-router.post('/unfollow', verifyToken, unfollowUser);
+router.post('/unfollow/:followingId', verifyToken, unfollowUser);
 router.get('/followers/:userId', verifyToken, getFollowers);
 router.get('/following/:userId', verifyToken, getFollowing);
 router.get('/feed/:userId', verifyToken, getFollowedUsersPosts);

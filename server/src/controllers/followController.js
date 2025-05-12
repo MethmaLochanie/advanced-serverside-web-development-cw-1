@@ -55,6 +55,14 @@ const unfollowUser = async (req, res) => {
     const followerId = req.user.id;
     const { followingId } = req.params;
 
+    if (!followingId) {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing Required Fields',
+            message: 'User ID to unfollow is required'
+        });
+    }
+
     try {
         const result = await followService.unfollowUser(followerId, followingId);
         res.json({

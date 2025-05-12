@@ -10,9 +10,7 @@ export const followUser = async (followingId) => {
 
 // Unfollow a user
 export const unfollowUser = async (followingId) => {
-    const response = await api.post('/follow/unfollow', {
-        followingId
-    });
+    const response = await api.post(`/follow/unfollow/${followingId}`);
     return response.data;
 };
 
