@@ -40,6 +40,12 @@ const Layout = ({ children }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button 
               color="inherit" 
+              onClick={() => navigate('/')}
+            >
+              Home
+            </Button>
+            <Button 
+              color="inherit" 
               onClick={() => navigate('/feed')}
               startIcon={<FeedIcon />}
             >

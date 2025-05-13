@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const blogPostRoutes = require('./routes/blogPostRoutes');
 const userRoutes = require('./routes/userRoutes');
 const followRoutes = require('./routes/followRoutes');
+const countryRoutes = require('./routes/countryRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', blogPostRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/follow', followRoutes);
+app.use('/api/countries', countryRoutes);
 
 // Error handling
 // app.use(logError);

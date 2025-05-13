@@ -126,8 +126,49 @@ const initializeDatabase = () => {
         `);
         console.log('Followers table ready');
 
+        // Drop old likes/dislikes tables if they exist
+        await run('DROP TABLE IF EXISTS post_likes');
+        await run('DROP TABLE IF EXISTS post_dislikes');
+        console.log('Old likes/dislikes tables dropped');
+
+        // Create new post_reactions table
+        await run(`
+          CREATE TABLE IF NOT EXISTS post_reactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            reaction_type TEXT NOT NULL CHECK(reaction_type IN ('like', 'dislike')),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(post_id, user_id, reaction_type)
+          )
+        `);
+        console.log('Post reactions table ready');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_post ON post_reactions(post_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_user ON post_reactions(user_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_type ON post_reactions(reaction_type)');
+        console.log('Indexes for post reactions created');
+
+        await run(`
+          CREATE TABLE IF NOT EXISTS post_comments (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id    INTEGER NOT NULL,
+            user_id    INTEGER NOT NULL,
+            content    TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        `);
+        console.log('Post comments table ready');
+
         // Indexes
         await run('CREATE INDEX IF NOT EXISTS idx_blog_posts_user   ON blog_posts(user_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_post ON post_reactions(post_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_user ON post_reactions(user_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_post_comments_user ON post_comments(user_id)');
         console.log('Indexes created');
         resolve();
       } catch (err) {

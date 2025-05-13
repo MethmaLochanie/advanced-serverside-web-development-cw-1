@@ -12,6 +12,7 @@ import CreateBlogPost from './pages/CreateBlogPost';
 import EditBlogPost from './pages/EditBlogPost';
 import Profile from './pages/Profile';
 import FollowedFeed from './components/FollowedFeed';
+import Home from './pages/Home';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -111,7 +112,13 @@ function App() {
             } />
             
             {/* Default route */}
-            <Route path="/" element={<Navigate to="/posts" replace />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Home />
+                </Layout>
+              </ProtectedRoute>
+            } />
           </Routes>
         </Router>
       </AuthProvider>
