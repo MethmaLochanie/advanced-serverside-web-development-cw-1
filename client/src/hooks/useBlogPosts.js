@@ -345,6 +345,20 @@ export const useBlogPosts = () => {
         }
     };
 
+    const getMyPosts = async (page = 1, limit = 10, search = '') => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getMyPosts(page, limit, search);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch my posts');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         loading,
         error,
@@ -365,6 +379,7 @@ export const useBlogPosts = () => {
         getLikeStatus,
         getLikeCount,
         getRecentPosts,
-        getPopularPosts
+        getPopularPosts,
+        getMyPosts
     };
 }; 

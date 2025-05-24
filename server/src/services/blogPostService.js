@@ -1,5 +1,5 @@
 const BlogPost = require('../database/models/BlogPost');
-const { validateAndGetCountryDetails } = require('../utils/countryApi');
+const { validateAndGetCountryDetails, fetchCountryByName } = require('../utils/countryApi');
 
 // Helper function to validate and format date
 const validateAndFormatDate = (dateStr) => {
@@ -33,7 +33,6 @@ const enrichPostWithCountryDetails = async (post) => {
             currency: country.currencies ? Object.values(country.currencies)[0]?.name : null,
             capital: country.capital?.[0] || null
         };
-        console.log('🌍 Country details enriched:', countryDetails);
         return {
             ...post,
             country_flag: countryDetails.flag,
@@ -43,7 +42,7 @@ const enrichPostWithCountryDetails = async (post) => {
             created_at: validateAndFormatDate(post.created_at)
         };
     } catch (error) {
-        console.error('❌ Error fetching country details:', error);
+        console.error('Error fetching country details:', error);
         // Return post without enrichment rather than failing
         return {
             ...post,
@@ -295,6 +294,34 @@ const getRecentPosts = async (limit = 10) => {
     return await Promise.all(posts.map(post => enrichPostWithCountryDetails(post)));
 };
 
+const findByUserId = async (userId, page = 1, limit = 10, search = '') => {
+    const posts = await BlogPost.findByUserId(userId, parseInt(page), parseInt(limit), search);
+    const total = await BlogPost.getTotalCountByUserId(userId, search);
+    if (!posts.length) {
+        return {
+            posts: [],
+            total,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(total / parseInt(limit)),
+                totalItems: total,
+                itemsPerPage: parseInt(limit)
+            }
+        };
+    }
+    const enrichedPosts = await Promise.all(posts.map(post => enrichPostWithCountryDetails(post)));
+    return {
+        posts: enrichedPosts,
+        total,
+        pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit)),
+            totalItems: total,
+            itemsPerPage: parseInt(limit)
+        }
+    };
+};
+
 module.exports = {
     createPost,
     getFeed,
@@ -314,5 +341,6 @@ module.exports = {
     getComments,
     deleteComment,
     getPopularPosts,
-    getRecentPosts
+    getRecentPosts,
+    findByUserId
 }; 

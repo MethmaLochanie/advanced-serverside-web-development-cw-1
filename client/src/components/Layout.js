@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const isLoggedIn = !!user;
 
   const handleLogout = () => {
     logout();
@@ -44,43 +45,53 @@ const Layout = ({ children }) => {
             >
               Home
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/feed')}
-              startIcon={<FeedIcon />}
-            >
-              Feed
-            </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate(`/profile/${user?.id}`)}
-              startIcon={<PersonIcon />}
-            >
-              Profile
-            </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/posts')}
-            >
-              Posts
-            </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/posts/create')}
-              startIcon={<AddIcon />}
-            >
-              Create Post
-            </Button>
-            <Typography variant="body1" sx={{ mr: 2 }}>
-              {user?.username}
-            </Typography>
-            <Button 
-              color="inherit" 
-              onClick={handleLogout}
-              startIcon={<Logout />}
-            >
-              Logout
-            </Button>
+            {isLoggedIn && (
+              <>
+                <Button 
+                  color="inherit" 
+                  onClick={() => navigate('/feed')}
+                  startIcon={<FeedIcon />}
+                >
+                  Feed
+                </Button>
+                <Button 
+                  color="inherit" 
+                  onClick={() => navigate('/posts')}
+                >
+                  My Posts
+                </Button>
+                <Button 
+                  color="inherit" 
+                  onClick={() => navigate('/posts/create')}
+                  startIcon={<AddIcon />}
+                >
+                  Create Post
+                </Button>
+                <Button 
+                  color="inherit" 
+                  onClick={() => navigate(`/profile/${user?.id}`)}
+                  startIcon={<PersonIcon />}
+                >
+                  {user?.username || 'Profile'}
+                </Button>
+                <Button 
+                  color="inherit" 
+                  onClick={handleLogout}
+                  startIcon={<Logout />}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+            {!isLoggedIn && (
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/login')}
+                startIcon={<Logout />}
+              >
+                Log In
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </AppBar>

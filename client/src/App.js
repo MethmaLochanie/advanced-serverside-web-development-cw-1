@@ -21,24 +21,10 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  // if (requireAdmin && user?.role !== 'admin') {
-  //   return <Navigate to="/dashboard" />;
-  // }
+
 
   return children;
 };
-
-// // Admin Route component
-// const AdminRoute = () => {
-//   console.log('AdminRoute rendering');
-//   return (
-//     <ProtectedRoute requireAdmin>
-//       <Layout>
-//         <AdminDashboard />
-//       </Layout>
-//     </ProtectedRoute>
-//   );
-// };
 
 function App() {
   return (
@@ -61,23 +47,6 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Admin route */}
-            {/* <Route path="/admin" element={<AdminRoute />} /> */}
-            
-            {/* <Route path="/countries" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Countries />
-                </Layout>
-              </ProtectedRoute>
-            } /> */}
-            {/* <Route path="/api-keys" element={
-              <ProtectedRoute>
-                <Layout>
-                  <ApiKeys />
-                </Layout>
-              </ProtectedRoute>
-            } /> */}
 
             {/* Blog post routes */}
             <Route path="/posts/create" element={
@@ -111,13 +80,11 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Default route */}
+            {/* Default route (Home) - public */}
             <Route path="/" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Home />
-                </Layout>
-              </ProtectedRoute>
+              <Layout>
+                <Home />
+              </Layout>
             } />
           </Routes>
         </Router>

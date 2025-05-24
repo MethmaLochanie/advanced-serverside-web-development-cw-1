@@ -15,6 +15,7 @@ router.get('/all', blogPostController.getFeed);
 router.get('/', validate(validations.pagination), blogPostController.getFeed);
 router.get('/search/country', validate(validations.searchByCountry), blogPostController.searchByCountry);
 router.get('/search/username', validate(validations.searchByUsername), blogPostController.searchByUsername);
+router.get('/mine', verifyToken, blogPostController.getMyPosts);
 router.get('/:id', validate(validations.getPost), blogPostController.getPost);
 
 // Protected routes (require authentication)

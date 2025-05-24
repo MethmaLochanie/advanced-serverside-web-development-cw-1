@@ -46,7 +46,6 @@ export const AuthProvider = ({ children }) => {
         setToken(newToken);
         setUser(userData);
       } else if (response.error === 'Account Inactive') {
-        // Don't store token or user data for inactive accounts
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);

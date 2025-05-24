@@ -1,86 +1,175 @@
-# Countries API Middleware Service
+# Travel Blog Platform
 
-A secure API middleware service that interfaces with RestCountries.com, providing filtered country information with authentication and API key management.
+A full-stack web application for sharing travel experiences, featuring country information integration, user authentication, and social features.
 
-## Project Structure
+## Architecture
 
 ```
 .
-├── client/                 # React frontend
-│   ├── public/            # Static files
+├── client/                 # React frontend application
+│   ├── public/            # Static assets and index.html
 │   └── src/
-|       ├── api/          #endpoints
-│       ├── components/    # Reusable components
-|           ├── admin/      #user management
-│       ├── pages/        # Page components
-│       ├── services/     # API services
-│       ├── hooks/        # hooks ro call API end points
-│       └── context/      # React context
-├── server/                # Node.js backend
+│       ├── api/           # API client and endpoints
+│       ├── components/    # Reusable React components
+│       │   └── admin/     # Administrative interface components
+│       ├── pages/         # Page-level components
+│       ├── hooks/         # Custom React hooks
+│       └── context/       # React context providers
+├── server/                # Express.js backend server
 │   └── src/
-│       ├── controllers/  # Route controllers
-│       ├── routes/       # API routes
-│       ├── middleware/   # Custom middleware
-│       ├── config/       # Configuration files
-│       ├── utils/        # Utility functions
-│       └── database/     # Database setup
+│       ├── controllers/   # Request handlers
+│       ├── routes/        # API route definitions
+│       ├── middleware/    # Custom middleware
+│       ├── config/        # Configuration files
+│       ├── utils/         # Utility functions
+│       └── database/      # Database models and migrations
+└── microservice/          # Country information service
+    └── src/
+        ├── controllers/   # Request handlers
+        ├── routes/        # API route definitions
+        ├── middleware/    # Custom middleware
+        ├── config/        # Configuration files
+        ├── utils/         # Utility functions
+        └── database/      # Database models and migrations
 ```
 
-## Features
+## Core Features
 
-- User authentication system
-- API key management
-- Secure country data retrieval
-- Rate limiting and usage tracking
-- SQLite database storage
+- **User Authentication**
+  - Secure registration and login
+  - JWT-based session management
+  - Role-based access control
 
-## Setup Instructions
+- **Blog Management**
+  - Create, read, update, and delete blog posts
+  - Rich text content support
+  - Image upload capabilities
 
-1. Clone the repository
-2. Install dependencies:
+- **Country Integration**
+  - Real-time country data retrieval
+  - Country-specific blog filtering
+  - Geographic information display
+
+- **Social Features**
+  - User following system
+  - Post reactions (likes/dislikes)
+  - Comment system
+  - User profiles
+
+- **Administrative Tools**
+  - User management interface
+  - Content moderation
+  - System statistics
+
+## Technical Stack
+
+- **Frontend**
+  - React.js
+  - Material-UI
+  - React Router
+  - Axios
+
+- **Backend**
+  - Node.js
+  - Express.js
+  - SQLite
+  - JWT Authentication
+
+- **Microservice**
+  - Node.js
+  - Express.js
+  - Country API Integration
+  - Redis (for caching)
+
+## Development Setup
+
+1. **Prerequisites**
+   - Node.js (v14 or higher)
+   - npm (v6 or higher)
+   - Docker (optional)
+   - Redis (optional, for microservice caching)
+
+2. **Environment Configuration**
    ```bash
-   # Install server dependencies
-   cd server
-   npm install
+   # Server
+   PORT=5001
+   JWT_SECRET=${JWT_SECRET}
+   JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+   JWT_EXPIRES_IN=1h
+   JWT_REFRESH_EXPIRES_IN=7d
+   DB_PATH=./src/database/database.sqlite
 
-   # Install client dependencies
-   cd ../client
-   npm install
+   # Client
+   REACT_APP_API_URL=http://localhost:5001/api
+   REACT_APP_MICROSERVICE_URL=http://localhost:5002/api
+
+   # Microservice
+   PORT=5002
+   JWT_SECRET=${JWT_SECRET}
+   COUNTRY_API_URL=https://restcountries.com/v3.1
+   API_RATE_LIMIT=100
+   API_RATE_WINDOW=900000
    ```
 
-3. Create a `.env` file in the server directory:
-   ```
-   PORT=5000
-   JWT_SECRET=your_jwt_secret
-   ```
-
-4. Start the development servers:
+3. **Installation**
    ```bash
-   # Start backend server
-   cd server
-   npm run dev
+   # Install dependencies for all services
+   cd server && npm install
+   cd ../client && npm install
+   cd ../microservice && npm install
 
-   # Start frontend server (in a new terminal)
-   cd client
-   npm start
+   # Start development servers
+   docker-compose up --build
    ```
 
-5. Access the application at `http://localhost:3000`
+## API Documentation
 
-## API Endpoints
-
+### Authentication Endpoints
 - `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/countries` - Get filtered country data
-- `POST /api/keys/generate` - Generate new API key
-- `GET /api/keys` - List user's API keys
-- `DELETE /api/keys/:id` - Delete API key
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh token
+
+### Blog Endpoints
+- `GET /api/posts` - List blog posts
+- `POST /api/posts` - Create blog post
+- `GET /api/posts/:id` - Get post details
+- `PUT /api/posts/:id` - Update post
+- `DELETE /api/posts/:id` - Delete post
+- `POST /api/posts/:id/like` - Like post
+- `POST /api/posts/:id/comment` - Add comment
+
+### Social Endpoints
+- `POST /api/follow/:userId` - Follow user
+- `DELETE /api/follow/:userId` - Unfollow user
+- `GET /api/followers` - Get followers
+- `GET /api/following` - Get following
+
+### Country Endpoints
+- `GET /api/countries` - List all countries
+- `GET /api/countries/:code` - Get country by code
+- `GET /api/countries/name/:name` - Search country by name
+- `GET /api/countries/region/:region` - Get countries by region
 
 ## Security Features
 
 - Password hashing with bcrypt
-- JWT authentication
-- API key validation
+- JWT-based authentication
 - Request rate limiting
-- Input validation
-- XSS protection with helmet 
+- Input validation and sanitization
+- XSS protection with helmet
+- CORS configuration
+- SQL injection prevention
+- API key management (microservice)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 

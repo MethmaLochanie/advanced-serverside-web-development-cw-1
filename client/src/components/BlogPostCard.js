@@ -80,7 +80,6 @@ const BlogPostCard = ({ post, onDelete, isOwner, countryInfo }) => {
   const [countryMeta, setCountryMeta] = useState(null);
   const [countryMetaLoading, setCountryMetaLoading] = useState(false);
   const [countryMetaError, setCountryMetaError] = useState(null);
-  // Cache for country meta by cca3
   const countryMetaCache = React.useRef({});
 
   useEffect(() => {
@@ -188,8 +187,8 @@ const BlogPostCard = ({ post, onDelete, isOwner, countryInfo }) => {
     try {
       const response = await addComment(post.id, newComment);
       if (response.success) {
-        await fetchComments(); // Always fetch the latest comments from backend
-        await fetchCounts(); // Update comment count
+        await fetchComments(); 
+        await fetchCounts(); 
         setNewComment("");
       }
     } catch (error) {
@@ -203,8 +202,8 @@ const BlogPostCard = ({ post, onDelete, isOwner, countryInfo }) => {
     try {
       const response = await deleteComment(post.id, commentId);
       if (response.success) {
-        await fetchComments(); // Always fetch the latest comments from backend
-        await fetchCounts(); // Update comment count
+        await fetchComments(); 
+        await fetchCounts(); 
       }
     } catch (error) {
       console.error("Error deleting comment:", error);

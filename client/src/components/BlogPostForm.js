@@ -28,6 +28,17 @@ const BlogPostForm = ({ initialData, onSubmit, isEditing = false }) => {
         country_cca3: initialData.country_cca3 || "",
         date_of_visit: initialData.date_of_visit ? new Date(initialData.date_of_visit) : new Date(),
       });
+      if (initialData.country_cca3) {
+        (async () => {
+          try {
+            const res = await api.get(`countries/cca3/${initialData.country_cca3}`);
+            setCountryOptions(res.data ? [res.data[0]] : []);
+            setCountrySearch(res.data && res.data[0] ? res.data[0].name : '');
+          } catch {
+            setCountryOptions([]);
+          }
+        })();
+      }
     }
   }, [initialData]);
 

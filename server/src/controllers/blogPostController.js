@@ -432,6 +432,22 @@ const getRecentPosts = async (req, res, next) => {
     }
 };
 
+const getMyPosts = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const result = await blogPostService.findByUserId(userId, page, limit, search);
+        res.json({
+            success: true,
+            message: 'My blog posts retrieved successfully',
+            data: result.posts,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createPost,
     getFeed,
@@ -450,5 +466,6 @@ module.exports = {
     getComments,
     deleteComment,
     getPopularPosts,
-    getRecentPosts
+    getRecentPosts,
+    getMyPosts
 }; 

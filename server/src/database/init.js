@@ -9,12 +9,10 @@ const dbPath = path.isAbsolute(config.database.path)
   ? config.database.path
   : path.join(__dirname, config.database.path);
 
-console.log('Database path:', dbPath);
 
 // Ensure the directory exists
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
-  console.log('Creating database directory:', dbDir);
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
@@ -24,7 +22,6 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CR
     console.error('Error connecting to database:', err);
     process.exit(1);
   }
-  console.log('Successfully connected to database');
 });
 
 // Debug handlers
@@ -38,7 +35,7 @@ const run = sql => new Promise((resolve, reject) => {
       console.error('Error executing query:', sql, err);
       return reject(err);
     }
-    resolve(this);  // so you can inspect lastID if needed
+    resolve(this);  
   });
 });
 
@@ -55,11 +52,9 @@ const get = (sql, params = []) => new Promise((resolve, reject) => {
 // Initialize schema inside a serialize block
 const initializeDatabase = () => {
   return new Promise((resolve, reject) => {
-    console.log('Initializing database schema…');
     db.serialize(async () => {
       try {
         await run('PRAGMA foreign_keys = ON');
-        console.log('Foreign keys enabled');
 
         await run(`
           CREATE TABLE IF NOT EXISTS users (
@@ -72,31 +67,6 @@ const initializeDatabase = () => {
             last_login  TIMESTAMP
           )
         `);
-        console.log('Users table ready');
-
-        // await run(`
-        //   CREATE TABLE IF NOT EXISTS api_keys (
-        //     id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        //     user_id    INTEGER NOT NULL,
-        //     api_key    TEXT UNIQUE NOT NULL,
-        //     is_active  BOOLEAN DEFAULT 1,
-        //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        //     last_used  TIMESTAMP,
-        //     FOREIGN KEY (user_id) REFERENCES users (id)
-        //   )
-        // `);
-        // console.log('API keys table ready');
-
-        // await run(`
-        //   CREATE TABLE IF NOT EXISTS api_usage (
-        //     id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        //     api_key_id INTEGER NOT NULL,
-        //     endpoint   TEXT NOT NULL,
-        //     timestamp  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        //     FOREIGN KEY (api_key_id) REFERENCES api_keys (id)
-        //   )
-        // `);
-        // console.log('API usage table ready');
 
         await run(`
           CREATE TABLE IF NOT EXISTS blog_posts (
@@ -111,7 +81,6 @@ const initializeDatabase = () => {
             FOREIGN KEY (user_id) REFERENCES users(id)
           )
         `);
-        console.log('Blog posts table ready');
 
         await run(`
           CREATE TABLE IF NOT EXISTS followers (
@@ -124,12 +93,10 @@ const initializeDatabase = () => {
             UNIQUE(follower_id, following_id)
           )
         `);
-        console.log('Followers table ready');
 
         // Drop old likes/dislikes tables if they exist
         await run('DROP TABLE IF EXISTS post_likes');
         await run('DROP TABLE IF EXISTS post_dislikes');
-        console.log('Old likes/dislikes tables dropped');
 
         // Create new post_reactions table
         await run(`
@@ -144,11 +111,9 @@ const initializeDatabase = () => {
             UNIQUE(post_id, user_id, reaction_type)
           )
         `);
-        console.log('Post reactions table ready');
         await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_post ON post_reactions(post_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_user ON post_reactions(user_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_type ON post_reactions(reaction_type)');
-        console.log('Indexes for post reactions created');
 
         await run(`
           CREATE TABLE IF NOT EXISTS post_comments (
@@ -161,7 +126,6 @@ const initializeDatabase = () => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
           )
         `);
-        console.log('Post comments table ready');
 
         // Indexes
         await run('CREATE INDEX IF NOT EXISTS idx_blog_posts_user   ON blog_posts(user_id)');
@@ -169,7 +133,6 @@ const initializeDatabase = () => {
         await run('CREATE INDEX IF NOT EXISTS idx_post_reactions_user ON post_reactions(user_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id)');
         await run('CREATE INDEX IF NOT EXISTS idx_post_comments_user ON post_comments(user_id)');
-        console.log('Indexes created');
         resolve();
       } catch (err) {
         console.error('Error during database initialization:', err);

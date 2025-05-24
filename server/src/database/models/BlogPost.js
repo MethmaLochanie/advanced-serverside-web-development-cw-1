@@ -105,15 +105,23 @@ class BlogPost {
         });
     }
 
-    static async findByUserId(userId) {
+    static async findByUserId(userId, page = 1, limit = 10, search = '') {
+        const offset = (page - 1) * limit;
+        let query = `
+            SELECT bp.*, u.username 
+            FROM blog_posts bp
+            JOIN users u ON bp.user_id = u.id
+            WHERE bp.user_id = ?
+        `;
+        let params = [userId];
+        if (search && search.trim() !== '') {
+            query += ' AND (LOWER(bp.title) LIKE LOWER(?) OR LOWER(bp.content) LIKE LOWER(?))';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        query += ' ORDER BY bp.created_at DESC LIMIT ? OFFSET ?';
+        params.push(limit, offset);
         return new Promise((resolve, reject) => {
-            db.all(`
-                SELECT bp.*, u.username 
-                FROM blog_posts bp
-                JOIN users u ON bp.user_id = u.id
-                WHERE bp.user_id = ? 
-                ORDER BY bp.created_at DESC
-            `, [userId], (err, rows) => {
+            db.all(query, params, (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows);
             });
@@ -229,13 +237,13 @@ class BlogPost {
     static async toggleReaction(postId, userId, reactionType) {
         const oppositeType = reactionType === 'like' ? 'dislike' : 'like';
         return new Promise((resolve, reject) => {
-            // First, remove the opposite reaction if it exists
+            //  remove the opposite reaction if it exists
             db.run(
                 'DELETE FROM post_reactions WHERE post_id = ? AND user_id = ? AND reaction_type = ?',
                 [postId, userId, oppositeType],
                 (err) => {
                     if (err) return reject(err);
-                    // Now, check if the current reaction exists
+                    // check if the current reaction exists
                     db.get(
                         'SELECT * FROM post_reactions WHERE post_id = ? AND user_id = ? AND reaction_type = ?',
                         [postId, userId, reactionType],
@@ -375,6 +383,21 @@ class BlogPost {
             `, [limit], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows);
+            });
+        });
+    }
+
+    static async getTotalCountByUserId(userId, search = '') {
+        let query = `SELECT COUNT(*) as total FROM blog_posts WHERE user_id = ?`;
+        let params = [userId];
+        if (search && search.trim() !== '') {
+            query += ' AND (LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?))';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        return new Promise((resolve, reject) => {
+            db.get(query, params, (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.total : 0);
             });
         });
     }

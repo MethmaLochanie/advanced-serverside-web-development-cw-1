@@ -1,54 +1,57 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../database/models/User');
+const express = require('express');
+const router = express.Router();
+const { fetchCountryByName, fetchAllCountries, fetchCountryByRegion, fetchCountryByCca3 } = require('../utils/countryApi');
 
-const register = async ({ username, email, password }) => {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = await User.create({
-        username,
-        email,
-        password: hashedPassword
-    });
-
-    return {
-        userId,
-        username,
-        email
-    };
-};
-
-const login = async ({ email, password }) => {
-    const user = await User.findByEmail(email);
-
-    if (!user) {
-        throw new Error('User Not Found');
+// GET /api/countries/name/:name
+router.get('/name/:name', async (req, res) => {
+  try {
+    const countries = await fetchCountryByName(req.params.name);
+    if (!countries || countries.length === 0) {
+      return res.status(404).json({ message: 'Country not found' });
     }
+    res.json(countries);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching country', error: err.message });
+  }
+});
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        throw new Error('Invalid Password');
+// GET /api/countries/cca3/:cca3
+router.get('/cca3/:cca3', async (req, res) => {
+  try {
+    const countries = await fetchCountryByCca3(req.params.cca3);
+    if (!countries || countries.length === 0) {
+      return res.status(404).json({ message: 'Country not found' });
     }
+    res.json(countries);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching country by cca3', error: err.message });
+  }
+});
 
-    await User.updateLastLogin(user.id);
+// GET /api/countries
+router.get('/', async (req, res) => {
+  try {
+    const countries = await fetchAllCountries();
+    if (!countries || countries.length === 0) {
+      return res.status(404).json({ message: 'No countries found' });
+    }
+    res.json(countries);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching countries', error: err.message });
+  }
+});
 
-    // Generate JWT token
-    const token = jwt.sign(
-        { id: user.id, username: user.username },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-    );
+// GET /api/countries/region/:region
+router.get('/region/:region', async (req, res) => {
+  try {
+    const countries = await fetchCountryByRegion(req.params.region);
+    if (!countries || countries.length === 0) {
+      return res.status(404).json({ message: 'No countries found for this region' });
+    }
+    res.json(countries);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching countries by region', error: err.message });
+  }
+});
 
-    return {
-        token,
-        user: {
-            id: user.id,
-            username: user.username,
-            email: user.email
-        }
-    };
-};
-
-module.exports = {
-    register,
-    login
-}; 
+module.exports = router; 

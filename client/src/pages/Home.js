@@ -3,6 +3,7 @@ import { Typography, Grid, CircularProgress, Alert, TextField, Button, MenuItem,
 import { useBlogPosts } from '../hooks/useBlogPosts';
 import BlogPostCard from '../components/BlogPostCard';
 import SortIcon from '@mui/icons-material/Sort';
+import CountrySelector from '../components/CountrySelector';
 
 const PAGE_SIZE = 6;
 
@@ -26,6 +27,9 @@ const Home = () => {
   const [allSort, setAllSort] = useState('newest');
   const [recentSort, setRecentSort] = useState('newest');
   const [popularSort, setPopularSort] = useState('mostLiked');
+
+  // Pagination state
+  const [allPage, setAllPage] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,9 +104,24 @@ const Home = () => {
     return posts;
   };
 
+  // Add a derived variable for paginated all posts
+  const paginatedAllPosts = sortPosts(allPosts, allSort).slice((allPage - 1) * PAGE_SIZE, allPage * PAGE_SIZE);
+
+  // When sorting or allPosts changes, reset to page 1
+  useEffect(() => {
+    setAllPage(1);
+  }, [allSort, allPosts]);
+
   return (
-    <>
-      <Typography variant="h4" gutterBottom>Home</Typography>
+    <Box>
+      <Typography variant="h4" gutterBottom align="center" sx={{ mt: 4 }}>
+        Explore Countries
+      </Typography>
+      <CountrySelector />
+      
+      <Typography variant="h4" gutterBottom align="center" sx={{ mt: 6 }}>
+        Blog Posts
+      </Typography>
       {loading && <CircularProgress />}
       {error && <Alert severity="error">{error}</Alert>}
       {!loading && !error && (
@@ -135,26 +154,25 @@ const Home = () => {
               </Button>
             )}
           </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <SortIcon sx={{ mr: 1 }} />
+            <TextField
+              select
+              size="small"
+              value={allSort}
+              onChange={e => setAllSort(e.target.value)}
+              sx={{ minWidth: 140 }}
+            >
+              <MenuItem value="newest">Newest</MenuItem>
+              <MenuItem value="mostLiked">Most Liked</MenuItem>
+              <MenuItem value="mostCommented">Most Commented</MenuItem>
+            </TextField>
+          </Box>
           {searching && <CircularProgress size={24} sx={{ mb: 2 }} />}
           {searchValue && !searching && searchResults && searchResults.length === 0 ? (
             <Alert severity="info" sx={{ mb: 2 }}>No results found.</Alert>
           ) : searchResults && searchResults.length > 0 ? (
             <>
-              <Typography variant="h5" sx={{ mt: 4, mb: 2, display: 'flex', alignItems: 'center' }}>
-                All Posts
-                <SortIcon sx={{ ml: 1 }} />
-                <TextField
-                  select
-                  size="small"
-                  value={allSort}
-                  onChange={e => setAllSort(e.target.value)}
-                  sx={{ ml: 2, minWidth: 140 }}
-                >
-                  <MenuItem value="newest">Newest</MenuItem>
-                  <MenuItem value="mostLiked">Most Liked</MenuItem>
-                  <MenuItem value="mostCommented">Most Commented</MenuItem>
-                </TextField>
-              </Typography>
               <Grid container spacing={2}>
                 {sortPosts(searchResults, allSort).map(post => (
                   <Grid item xs={12} md={6} key={post.id}>
@@ -172,13 +190,25 @@ const Home = () => {
               </Box>
             </>
           ) : (
-            <Grid container spacing={2}>
-              {sortPosts(allPosts, allSort).map(post => (
-                <Grid item xs={12} md={6} key={post.id}>
-                  <BlogPostCard post={post} />
-                </Grid>
-              ))}
-            </Grid>
+            <>
+              <Grid container spacing={2}>
+                {paginatedAllPosts.map(post => (
+                  <Grid item xs={12} md={6} key={post.id}>
+                    <BlogPostCard post={post} />
+                  </Grid>
+                ))}
+              </Grid>
+              {allPosts.length > PAGE_SIZE && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Pagination
+                    count={Math.ceil(allPosts.length / PAGE_SIZE)}
+                    page={allPage}
+                    onChange={(e, value) => setAllPage(value)}
+                    color="primary"
+                  />
+                </Box>
+              )}
+            </>
           )}
           <Typography variant="h5" sx={{ mt: 6, mb: 2, display: 'flex', alignItems: 'center' }}>
             Recent Posts
@@ -226,7 +256,7 @@ const Home = () => {
           </Grid>
         </>
       )}
-    </>
+    </Box>
   );
 };
 

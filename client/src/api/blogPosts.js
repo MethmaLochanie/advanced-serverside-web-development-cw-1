@@ -111,5 +111,13 @@ export const blogPostService = {
     getPopularPosts: async (limit = 10) => {
         const response = await api.get('/posts/popular', { params: { limit } });
         return response.data;
+    },
+
+    // Get my blog posts
+    getMyPosts: async (page = 1, limit = 10, search = '') => {
+        const response = await api.get('/posts/mine', {
+            params: { page, limit, search }
+        });
+        return response.data;
     }
 }; 
