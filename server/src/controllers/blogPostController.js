@@ -2,7 +2,7 @@ const blogPostService = require('../services/blogPostService');
 
 const createPost = async (req, res, next) => {
     try {
-        const { title, content, country_name, date_of_visit } = req.body;
+        const { title, content, country_name, country_cca3, date_of_visit } = req.body;
         const userId = req.user.id;
         if (!title || !content || !country_name || !date_of_visit) {
             return res.status(400).json({
@@ -12,7 +12,7 @@ const createPost = async (req, res, next) => {
             });
         }
 
-        const post = await blogPostService.createPost(userId, { title, content, country_name, date_of_visit });
+        const post = await blogPostService.createPost(userId, { title, content, country_name, country_cca3, date_of_visit });
         res.status(201).json({
             success: true,
             message: 'Blog post created successfully',
@@ -82,8 +82,8 @@ const getPost = async (req, res, next) => {
 
 const updatePost = async (req, res, next) => {
     try {
-        const { title, content, country_name } = req.body;
-        const post = await blogPostService.updatePost(req.params.id, req.user.id, { title, content, country_name });
+        const { title, content, country_name, country_cca3 } = req.body;
+        const post = await blogPostService.updatePost(req.params.id, req.user.id, { title, content, country_name, country_cca3 });
 
         if (!post) {
             return res.status(404).json({
@@ -216,6 +216,238 @@ const searchByUsername = async (req, res, next) => {
     }
 };
 
+const toggleDislike = async (req, res, next) => {
+    try {
+        const result = await blogPostService.toggleDislike(req.params.id, req.user.id);
+        res.json({
+            success: true,
+            message: result.isDisliked ? 'Post disliked' : 'Post undisliked',
+            data: result
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const getDislikeStatus = async (req, res, next) => {
+    try {
+        const result = await blogPostService.getDislikeStatus(req.params.id, req.user.id);
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const getDislikeCount = async (req, res, next) => {
+    try {
+        const count = await blogPostService.getDislikeCount(req.params.id);
+        res.json({
+            success: true,
+            data: { count }
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const toggleLike = async (req, res, next) => {
+    try {
+        const result = await blogPostService.toggleLike(req.params.id, req.user.id);
+        res.json({
+            success: true,
+            message: result.isLiked ? 'Post liked' : 'Post unliked',
+            data: result
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const getLikeStatus = async (req, res, next) => {
+    try {
+        const result = await blogPostService.getLikeStatus(req.params.id, req.user.id);
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const getLikeCount = async (req, res, next) => {
+    try {
+        const count = await blogPostService.getLikeCount(req.params.id);
+        res.json({
+            success: true,
+            data: { count }
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const addComment = async (req, res, next) => {
+    try {
+        const { content } = req.body;
+        if (!content) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing Content',
+                message: 'Comment content is required'
+            });
+        }
+
+        const commentId = await blogPostService.addComment(req.params.id, req.user.id, content);
+        const comments = await blogPostService.getComments(req.params.id);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Comment added successfully',
+            data: comments
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const getComments = async (req, res, next) => {
+    try {
+        const comments = await blogPostService.getComments(req.params.id);
+        res.json({
+            success: true,
+            data: comments
+        });
+    } catch (error) {
+        if (error.message === 'Post not found') {
+            return res.status(404).json({
+                success: false,
+                error: 'Post Not Found',
+                message: 'The requested blog post does not exist'
+            });
+        }
+        next(error);
+    }
+};
+
+const deleteComment = async (req, res, next) => {
+    try {
+        const deleted = await blogPostService.deleteComment(req.params.commentId, req.user.id);
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                error: 'Comment Not Found',
+                message: 'The requested comment does not exist or you are not authorized to delete it'
+            });
+        }
+
+        const comments = await blogPostService.getComments(req.params.id);
+        res.json({
+            success: true,
+            message: 'Comment deleted successfully',
+            data: comments
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getPopularPosts = async (req, res, next) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const posts = await blogPostService.getPopularPosts(limit);
+        res.json({
+            success: true,
+            message: 'Popular blog posts retrieved successfully',
+            data: posts
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getRecentPosts = async (req, res, next) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const posts = await blogPostService.getRecentPosts(limit);
+        res.json({
+            success: true,
+            message: 'Recent blog posts retrieved successfully',
+            data: posts
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getMyPosts = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const result = await blogPostService.findByUserId(userId, page, limit, search);
+        res.json({
+            success: true,
+            message: 'My blog posts retrieved successfully',
+            data: result.posts,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createPost,
     getFeed,
@@ -223,5 +455,17 @@ module.exports = {
     updatePost,
     deletePost,
     searchByCountry,
-    searchByUsername
+    searchByUsername,
+    toggleDislike,
+    getDislikeStatus,
+    getDislikeCount,
+    toggleLike,
+    getLikeStatus,
+    getLikeCount,
+    addComment,
+    getComments,
+    deleteComment,
+    getPopularPosts,
+    getRecentPosts,
+    getMyPosts
 }; 

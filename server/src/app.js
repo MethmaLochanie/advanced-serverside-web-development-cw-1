@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-// const { logRequest, logError } = require('./middleware/logger');
 const errorHandler = require('./middleware/error');
 const { sanitizeRequest } = require('./middleware/sanitizer');
 
@@ -9,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const blogPostRoutes = require('./routes/blogPostRoutes');
 const userRoutes = require('./routes/userRoutes');
 const followRoutes = require('./routes/followRoutes');
+const countryRoutes = require('./routes/countryRoutes');
 
 const app = express();
 
@@ -23,14 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 // Request sanitization
 app.use(sanitizeRequest);
 
-// Request logging
-// app.use(logRequest);
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', blogPostRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/follow', followRoutes);
+app.use('/api/countries', countryRoutes);
 
 // Error handling
 // app.use(logError);

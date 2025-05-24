@@ -21,38 +21,33 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const BlogPosts = () => {
   const [posts, setPosts] = useState([]);
-  const [searchType, setSearchType] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: 10,
   });
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const { user } = useAuth();
   const {
-    getAllPosts,
-    searchByCountry,
-    searchByUsername,
+    getMyPosts,
     deletePost,
     loading: postsLoading,
     error: postsError,
   } = useBlogPosts();
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (page = pagination.currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await getAllPosts();
-
+      const response = await getMyPosts(page, pagination.itemsPerPage, search);
       if (response.success) {
         setPosts(response.data || []);
         setPagination(
-          response.data?.pagination || {
+          response.pagination || {
             currentPage: 1,
             totalPages: 1,
             totalItems: 0,
@@ -60,10 +55,10 @@ const BlogPosts = () => {
           }
         );
         if (!response.data || response.data.length === 0) {
-          setSuccessMessage("No blog posts found");
+          setSuccessMessage('No blog posts found');
         }
       } else {
-        setError(response.error || "Failed to fetch posts");
+        setError(response.error || 'Failed to fetch posts');
         setPagination({
           currentPage: 1,
           totalPages: 1,
@@ -74,7 +69,7 @@ const BlogPosts = () => {
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "An error occurred while fetching posts"
+          'An error occurred while fetching posts'
       );
       setPagination({
         currentPage: 1,
@@ -87,86 +82,24 @@ const BlogPosts = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      fetchPosts();
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response =
-        searchType === "country"
-          ? await searchByCountry(searchQuery, pagination.currentPage)
-          : await searchByUsername(searchQuery, pagination.currentPage);
-
-      if (response.success) {
-        setPosts(response.data || []);
-        setPagination(
-          response.data?.pagination || {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 0,
-            itemsPerPage: 10,
-          }
-        );
-        if (!response.data || response.data.length === 0) {
-          setSuccessMessage(
-            `No posts found for ${
-              searchType === "country" ? "country" : "username"
-            }: ${searchQuery}`
-          );
-        }
-      } else {
-        setError(response.error || "Failed to search posts");
-      }
-    } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          "An error occurred while searching posts"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePageChange = (event, value) => {
-    setPagination({ ...pagination, currentPage: value });
+    setPagination((prev) => ({ ...prev, currentPage: value }));
+    fetchPosts(value, searchQuery);
   };
 
-  const handleSearchTypeChange = (type) => {
-    setSearchType(type);
-    setSearchQuery("");
-    setPagination({
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      itemsPerPage: 10,
-    });
-  };
-
-  const handleAllPosts = () => {
-    setSearchType("all");
-    setSearchQuery("");
-    setPagination({
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      itemsPerPage: 10,
-    });
-    fetchPosts();
+  const handleSearch = () => {
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    fetchPosts(1, searchQuery);
   };
 
   const handleDelete = async (postId) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
+    if (window.confirm('Are you sure you want to delete this post?')) {
       try {
         await deletePost(postId);
         setPosts(posts.filter((post) => post.id !== postId));
-        setSuccessMessage("Post deleted successfully");
+        setSuccessMessage('Post deleted successfully');
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete post");
+        setError(err.response?.data?.message || 'Failed to delete post');
       }
     }
   };
@@ -178,6 +111,7 @@ const BlogPosts = () => {
 
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line
   }, [pagination.currentPage]);
 
   if (loading) {
@@ -199,7 +133,7 @@ const BlogPosts = () => {
         open={!!error}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           severity="error"
@@ -222,7 +156,7 @@ const BlogPosts = () => {
         open={!!successMessage}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           severity="info"
@@ -243,60 +177,26 @@ const BlogPosts = () => {
 
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Travel Stories
+          My Posts
         </Typography>
-
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={12} sm={4} md={4}>
-            <Button
-              variant={searchType === "all" ? "contained" : "outlined"}
-              onClick={handleAllPosts}
-              fullWidth
-            >
-              All Posts
-            </Button>
-          </Grid>
-          <Grid xs={12} sm={4} md={4}>
-            <Button
-              variant={searchType === "country" ? "contained" : "outlined"}
-              onClick={() => handleSearchTypeChange("country")}
-              fullWidth
-            >
-              Search by Country
-            </Button>
-          </Grid>
-          <Grid xs={12} sm={4} md={4}>
-            <Button
-              variant={searchType === "username" ? "contained" : "outlined"}
-              onClick={() => handleSearchTypeChange("username")}
-              fullWidth
-            >
-              Search by Username
-            </Button>
-          </Grid>
-        </Grid>
-
-        {(searchType === "country" || searchType === "username") && (
-          <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-            <TextField
-              fullWidth
-              label={`Search by ${searchType}`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleSearch}>
-                      <SearchIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-        )}
-
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          <TextField
+            fullWidth
+            label="Search My Posts"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleSearch}>
+                    <SearchIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
         {posts.length === 0 ? (
           <Alert severity="info" sx={{ mt: 2 }}>
             No blog posts found.
@@ -311,9 +211,8 @@ const BlogPosts = () => {
                 isOwner={user && user.id === post.user_id}
               />
             ))}
-
             {pagination.totalPages > 1 && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                 <Pagination
                   count={pagination.totalPages}
                   page={pagination.currentPage}

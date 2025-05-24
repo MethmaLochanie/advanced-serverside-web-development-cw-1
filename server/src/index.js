@@ -17,9 +17,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Initialize database and start server
 const startServer = async () => {
     try {
-        console.log('Starting server initialization...');
         await initializeDatabase();
-        console.log('Database initialized successfully');
 
         const server = app.listen(config.port, () => {
             console.log(`Server is running on port ${config.port}`);
@@ -36,16 +34,13 @@ const startServer = async () => {
         process.exit(1);
     }
 };
-console.log('Starting server...');
 startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Shutting down gracefully...');
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
-    console.log('SIGINT received. Shutting down gracefully...');
     process.exit(0);
 }); 

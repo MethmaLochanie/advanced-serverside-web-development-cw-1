@@ -28,7 +28,6 @@ const FollowButton = ({ targetUserId, initialIsFollowing = false, onFollowChange
             if (onFollowChange) onFollowChange();
         } catch (error) {
             console.error('Error toggling follow:', error);
-            // If the error is that we're not following, just update the state
             if (error.response?.data?.error === 'Follow Relationship Not Found') {
                 setIsFollowing(false);
                 if (onFollowChange) onFollowChange();

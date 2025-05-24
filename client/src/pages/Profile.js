@@ -26,6 +26,39 @@ const Profile = () => {
     } = useUsers();
     const { user } = useAuth();
 
+    // Function to refresh all data
+    const refreshAllData = useCallback(async () => {
+        if (!userId) return;
+        
+        setListsLoading(true);
+        try {
+            // Refresh profile data
+            const profileResponse = await getUserProfile(userId);
+            if (profileResponse?.data) {
+                setProfileUser(profileResponse.data);
+            }
+
+            // Refresh followers and following
+            const [followersData, followingData] = await Promise.all([
+                getFollowers(userId),
+                getFollowing(userId)
+            ]);
+            
+            setFollowers(followersData.data || []);
+            setFollowing(followingData.data || []);
+
+            // Refresh suggested users if they are shown
+            if (showSuggestedUsers) {
+                const suggestedData = await getSuggestedUsersFromHook();
+                setSuggestedUsers(suggestedData.data || []);
+            }
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        } finally {
+            setListsLoading(false);
+        }
+    }, [userId, getUserProfile, getFollowers, getFollowing, getSuggestedUsersFromHook, showSuggestedUsers]);
+
     // Fetch user profile
     useEffect(() => {
         let isMounted = true;
@@ -47,32 +80,12 @@ const Profile = () => {
         };
     }, [userId, getUserProfile]);
 
-    // Fetch followers and following
-    const fetchFollowData = useCallback(async () => {
-        if (!userId) return;
-        
-        setListsLoading(true);
-        try {
-            const [followersData, followingData] = await Promise.all([
-                getFollowers(userId),
-                getFollowing(userId)
-            ]);
-            
-            setFollowers(followersData.data || []);
-            setFollowing(followingData.data || []);
-        } catch (error) {
-            console.error('Error refreshing follow data:', error);
-        } finally {
-            setListsLoading(false);
-        }
-    }, [userId, getFollowers, getFollowing]);
-
     // Initial fetch of follow data
     useEffect(() => {
         if (userId) {
-            fetchFollowData();
+            refreshAllData();
         }
-    }, [userId, fetchFollowData]);
+    }, [userId, refreshAllData]);
 
     const fetchSuggestedUsers = useCallback(async () => {
         try {
@@ -145,7 +158,7 @@ const Profile = () => {
                                     <FollowButton
                                         targetUserId={profileUser.id}
                                         initialIsFollowing={followers.some(f => f.id === user?.id)}
-                                        onFollowChange={fetchFollowData}
+                                        onFollowChange={refreshAllData}
                                     />
                                 </Box>
                             )}
@@ -168,7 +181,7 @@ const Profile = () => {
                         <FollowLists 
                             users={followers}
                             loading={listsLoading}
-                            onRefresh={fetchFollowData}
+                            onRefresh={refreshAllData}
                             followingIds={followers.map(u => u.id)}
                             emptyMessage={
                                 <Stack alignItems="center" spacing={1}>
@@ -185,7 +198,7 @@ const Profile = () => {
                         <FollowLists 
                             users={following}
                             loading={listsLoading}
-                            onRefresh={fetchFollowData}
+                            onRefresh={refreshAllData}
                             followingIds={following.map(u => u.id)}
                             emptyMessage={
                                 <Stack alignItems="center" spacing={1}>
@@ -220,7 +233,7 @@ const Profile = () => {
                             <FollowLists 
                                 users={suggestedUsers}
                                 loading={listsLoading}
-                                onRefresh={fetchFollowData}
+                                onRefresh={refreshAllData}
                                 emptyMessage={
                                     <Stack alignItems="center" spacing={1}>
                                         <PersonOutlineIcon color="disabled" fontSize="large" />

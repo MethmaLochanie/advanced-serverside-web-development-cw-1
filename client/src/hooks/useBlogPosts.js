@@ -29,7 +29,7 @@ export const useBlogPosts = () => {
             const data = await blogPostService.getAllPosts();
             return data;
         } catch (err) {
-            setError('Failed to fetch blog posts');
+            setError('Failed to fetch all posts');
             throw err;
         } finally {
             setLoading(false);
@@ -146,6 +146,219 @@ export const useBlogPosts = () => {
         }
     };
 
+    const addComment = async (postId, comment) => {
+        if (!user) {
+            throw new Error('You must be logged in to comment');
+        }
+        if (!comment?.trim()) {
+            throw new Error('Comment cannot be empty');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.addComment(postId, comment);
+            return data;
+        } catch (err) {
+            setError('Failed to add comment');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getComments = async (postId) => {
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getComments(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch comments');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const deleteComment = async (postId, commentId) => {
+        if (!user) {
+            throw new Error('You must be logged in to delete a comment');
+        }
+        if (!postId || !commentId) {
+            throw new Error('Post ID and Comment ID are required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.deleteComment(postId, commentId);
+            return data;
+        } catch (err) {
+            setError('Failed to delete comment');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleDislike = async (postId) => {
+        if (!user) {
+            throw new Error('You must be logged in to dislike a post');
+        }
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.toggleDislike(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to toggle dislike');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getDislikeStatus = async (postId) => {
+        if (!user) {
+            throw new Error('You must be logged in to check dislike status');
+        }
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getDislikeStatus(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to get dislike status');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getDislikeCount = async (postId) => {
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getDislikeCount(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch dislike count');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleLike = async (postId) => {
+        if (!user) {
+            throw new Error('You must be logged in to like a post');
+        }
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.toggleLike(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to toggle like');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getLikeStatus = async (postId) => {
+        if (!user) {
+            throw new Error('You must be logged in to check like status');
+        }
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getLikeStatus(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to get like status');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getLikeCount = async (postId) => {
+        if (!postId) {
+            throw new Error('Post ID is required');
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getLikeCount(postId);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch like count');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getRecentPosts = async (limit = 10) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getRecentPosts(limit);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch recent posts');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getPopularPosts = async (limit = 10) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getPopularPosts(limit);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch popular posts');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getMyPosts = async (page = 1, limit = 10, search = '') => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await blogPostService.getMyPosts(page, limit, search);
+            return data;
+        } catch (err) {
+            setError('Failed to fetch my posts');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         loading,
         error,
@@ -155,6 +368,18 @@ export const useBlogPosts = () => {
         updatePost,
         deletePost,
         searchByCountry,
-        searchByUsername
+        searchByUsername,
+        addComment,
+        getComments,
+        deleteComment,
+        toggleDislike,
+        getDislikeStatus,
+        getDislikeCount,
+        toggleLike,
+        getLikeStatus,
+        getLikeCount,
+        getRecentPosts,
+        getPopularPosts,
+        getMyPosts
     };
 }; 
