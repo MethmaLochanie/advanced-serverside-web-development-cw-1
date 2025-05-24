@@ -92,7 +92,7 @@ A full-stack web application for sharing travel experiences, featuring country i
 2. **Environment Configuration**
    ```bash
    # Server
-   PORT=5001
+   PORT=5000
    JWT_SECRET=${JWT_SECRET}
    JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
    JWT_EXPIRES_IN=1h
@@ -100,11 +100,11 @@ A full-stack web application for sharing travel experiences, featuring country i
    DB_PATH=./src/database/database.sqlite
 
    # Client
-   REACT_APP_API_URL=http://localhost:5001/api
-   REACT_APP_MICROSERVICE_URL=http://localhost:5002/api
+   REACT_APP_API_URL=http://localhost:5000/api
+   REACT_APP_MICROSERVICE_URL=http://localhost:4000/api
 
    # Microservice
-   PORT=5002
+   PORT=4000
    JWT_SECRET=${JWT_SECRET}
    COUNTRY_API_URL=https://restcountries.com/v3.1
    API_RATE_LIMIT=100

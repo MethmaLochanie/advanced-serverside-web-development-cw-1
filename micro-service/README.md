@@ -76,7 +76,7 @@ src/
 
 ```bash
 # Server Configuration
-PORT=5002
+PORT=5000
 NODE_ENV=development
 
 # Security
@@ -112,7 +112,7 @@ DB_PATH=./src/database/database.sqlite
    ```bash
    # Build and run with Docker
    docker build -t country-microservice .
-   docker run -p 5002:5002 country-microservice
+   docker run -p 4000:5002 country-microservice
    ```
 
 ## API Usage

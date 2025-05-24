@@ -104,7 +104,7 @@ src/
 
 ```bash
 # Server Configuration
-PORT=5001
+PORT=5000
 NODE_ENV=development
 
 # Security
@@ -121,7 +121,7 @@ UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=5242880  # 5MB
 
 # Microservice
-COUNTRY_SERVICE_URL=http://localhost:5002
+COUNTRY_SERVICE_URL=http://localhost:4000
 ```
 
 ## Development Setup
@@ -149,7 +149,7 @@ COUNTRY_SERVICE_URL=http://localhost:5002
    ```bash
    # Build and run with Docker
    docker build -t blog-server .
-   docker run -p 5001:5001 blog-server
+   docker run -p 4000:5001 blog-server
    ```
 
 ## API Usage
