@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { db } = require('../database/init');
+const config = require('../config/config');
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -17,7 +18,7 @@ const verifyToken = (req, res, next) => {
 
   try {
     console.log('Verifying token...');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwtSecret);
     console.log('Token decoded:', { userId: decoded.id, username: decoded.username });
 
     // Verify user exists and is active

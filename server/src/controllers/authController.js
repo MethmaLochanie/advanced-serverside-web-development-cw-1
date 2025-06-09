@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db } = require('../database/init');
 const crypto = require('crypto');
+const config = require('../config/config');
 
 const register = (req, res) => {
   const { username, email, password } = req.body;
@@ -79,8 +80,8 @@ const login = (req, res) => {
       // Generate JWT token
       const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        config.jwtSecret,
+        { expiresIn: config.jwtExpiration }
       );
 
       // Update last login
@@ -143,8 +144,8 @@ const validateToken = (req, res) => {
           // Generate a fresh token
           const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            config.jwtSecret,
+            { expiresIn: config.jwtExpiration }
           );
 
           res.json({
