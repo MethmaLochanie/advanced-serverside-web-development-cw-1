@@ -2,8 +2,9 @@ const sqlite3 = require('sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+const config = require('../config/config');
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+const dbPath = config.database.path;
 console.log('Database path:', dbPath);
 
 // Ensure database directory exists
@@ -133,12 +134,6 @@ const initializeDatabase = async () => {
     await run('CREATE INDEX IF NOT EXISTS idx_api_usage_key ON api_usage(api_key_id)');
     await run('CREATE INDEX IF NOT EXISTS idx_admin_logs_admin ON admin_logs(admin_id)');
     console.log('Indexes created');
-
-    // Verify JWT secret
-    if (!process.env.JWT_SECRET) {
-      console.error('WARNING: JWT_SECRET is not set in environment variables');
-      process.exit(1);
-    }
 
     // Check for existing admin user
     const adminUser = await get('SELECT id, username, email, role FROM users WHERE email = ?', ['admin@example.com']);
